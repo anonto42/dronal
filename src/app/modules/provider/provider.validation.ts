@@ -42,6 +42,8 @@ const updateServiceSchema = z.object({
     availableDay: z.array(z.enum([SERVICE_DAY.FRI,SERVICE_DAY.MON,SERVICE_DAY.SAT,SERVICE_DAY.SUN,SERVICE_DAY.THU,SERVICE_DAY.TUE,SERVICE_DAY.WED]), { invalid_type_error: "Available day is required" }).optional(),
     startTime: z.string({ invalid_type_error: "Start time is required" }).optional(),
     endTime: z.string({ invalid_type_error: "End time is required" }).optional(),
+    longitude: z.coerce.number().optional(),
+    latitude: z.coerce.number().optional(),
   }).strict()
 });
 

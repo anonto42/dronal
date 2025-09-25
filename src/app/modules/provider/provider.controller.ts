@@ -30,6 +30,8 @@ export class ProviderController {
 
     if (image) req.body.image = image;
 
+    if(req.body.longitude && req.body.latitude) req.body.location = { type: "Point", coordinates: [Number(req.body.longitude), Number(req.body.latitude)] };
+
     const result = await this.providerService.profileUpdate(req.user, req.body);
 
     sendResponse(res, {
