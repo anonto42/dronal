@@ -8,6 +8,7 @@ import unlinkFile from "../../../shared/unlinkFile";
 import { IVerificaiton } from "../verification/verification.interface";
 import { VERIFICATION_STATUS } from "../../../enums/user";
 import { IService } from "../service/service.interface";
+import bcrypt from "bcryptjs";
 
 export class ProviderService {
   private providerRepo: ProviderRepository;
@@ -53,14 +54,23 @@ export class ProviderService {
   }
 
   public async profileDelete(
-    payload: JwtPayload
+    payload: JwtPayload,
+    data: { password: string }
   ) {
     
-    const provider = await this.providerRepo.findById( new mongoose.Types.ObjectId( payload.id ));
+    const provider = await this.providerRepo.findById( new mongoose.Types.ObjectId( payload.id ),"+password");
     if (!provider) {
       throw new ApiError(
         StatusCodes.NOT_FOUND,
         "User not found"
+      )
+    };
+
+    const isMatch = data.password && await bcrypt.compare(data.password, provider.password);
+    if (!isMatch) {
+      throw new ApiError(
+        StatusCodes.NOT_FOUND,
+        "Password not match!"
       )
     };
 

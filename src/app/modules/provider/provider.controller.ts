@@ -42,7 +42,7 @@ export class ProviderController {
 
   public providerProfileDelete = catchAsync(async (req: Request, res: Response) => {
 
-    const result = await this.providerService.profileDelete(req.user);
+    const result = await this.providerService.profileDelete(req.user,req.body);
 
     sendResponse(res, {
       success: true,
