@@ -95,6 +95,7 @@ const userSchema = new Schema<IUser, UserModal>(
       type: String,
       min: [10,"You must give minimum 10 characters"],
       max: [150,"You can give max 150 characters"],
+      default: "not given"
     },
     location: {
       type: {
