@@ -48,7 +48,7 @@ export class ProviderService {
         "User not found!"
       )
     }
-    if (provider?.image) unlinkFile(provider.image);
+    if (payload.image && provider.image) unlinkFile(provider.image);
 
     return data
   }
