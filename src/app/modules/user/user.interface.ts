@@ -17,6 +17,7 @@ export type IUser = {
   experience: string,
   language: string,
   overView: string,
+  wallet: number,
   
   // Same thinks
   fcmToken: string;

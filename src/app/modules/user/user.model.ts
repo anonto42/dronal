@@ -56,6 +56,10 @@ const userSchema = new Schema<IUser, UserModal>(
       type: String,
       default: ""
     },
+    wallet: {
+      type: Number,
+      default: 0
+    },
 
     // Same thinks
     fcmToken:{
