@@ -7,6 +7,7 @@ import { IUser } from "../user/user.interface";
 import unlinkFile from "../../../shared/unlinkFile";
 import { IVerificaiton } from "../verification/verification.interface";
 import { VERIFICATION_STATUS } from "../../../enums/user";
+import { IService } from "../service/service.interface";
 
 export class ProviderService {
   private providerRepo: ProviderRepository;
@@ -138,6 +139,126 @@ export class ProviderService {
     })
 
     return data
+  }
+
+  public async providerServices(
+    payload: JwtPayload,
+    query: {
+      page: number;
+      limit: number;
+      sortBy: string;
+      sortOrder: "asc" | "desc";
+    }
+  ) {
+    const result = await this.providerRepo.providerServices({
+      filter: { user: new mongoose.Types.ObjectId( payload.id ) },
+      paginationOptions: query,
+      select:"-__v -updatedAt -user"
+    });
+    return result
+  }
+
+  public async addService(
+    payload: JwtPayload,
+    data: Partial<IService>
+  ) {
+    const result = await this.providerRepo.addService({...data,user: new mongoose.Types.ObjectId( payload.id )});
+
+    //@ts-ignore
+    delete result.user
+    //@ts-ignore
+    delete result.__v
+    //@ts-ignore
+    delete result.updatedAt
+    //@ts-ignore
+    delete result.createdAt
+    //@ts-ignore
+    delete result._id
+
+    return result
+  }
+
+  public async deleteService(
+    payload: JwtPayload,
+    id: string
+  ) {
+    const result = await this.providerRepo.deleteService(new mongoose.Types.ObjectId(id));
+    if (!result) {
+      throw new ApiError(
+        StatusCodes.NOT_FOUND,
+        "Service not found!"
+      )
+    }
+
+    //@ts-ignore
+    delete result.user
+    //@ts-ignore
+    delete result.__v
+    //@ts-ignore
+    delete result.updatedAt
+    //@ts-ignore
+    delete result.createdAt
+    //@ts-ignore
+    delete result._id
+
+    return result
+  }
+
+  public async updateService(
+    payload: JwtPayload,
+    id: string,
+    data: Partial<IService>
+  ) {
+    const result = await this.providerRepo.updateService(new mongoose.Types.ObjectId(id),data);
+    if (!result) {
+      throw new ApiError(
+        StatusCodes.NOT_FOUND,
+        "Service not found!"
+      )
+    }
+
+    //@ts-ignore
+    delete result.user
+    //@ts-ignore
+    delete result.__v
+    //@ts-ignore
+    delete result.updatedAt
+    //@ts-ignore
+    delete result.createdAt
+    //@ts-ignore
+    delete result._id
+    
+    return result
+  }
+
+  public async viewService(
+    payload: JwtPayload,
+    id: string
+  ) {
+    const result = await this.providerRepo.providerServices({
+      filter: { user: new mongoose.Types.ObjectId( payload.id ), _id: new mongoose.Types.ObjectId( id ) },
+      paginationOptions: { page: 1, limit: 1 },
+      select:"-__v -updatedAt -user"
+    });
+    if (!result.length) {
+      throw new ApiError(
+        StatusCodes.NOT_FOUND,
+        "Service not found!"
+      )
+    }
+
+    //@ts-ignore
+    delete result.user
+    //@ts-ignore
+    delete result.__v
+    //@ts-ignore
+    delete result.updatedAt
+    //@ts-ignore
+    delete result.createdAt
+    //@ts-ignore
+    delete result._id
+    
+    return result[0]
   }
 
 }

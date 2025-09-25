@@ -46,6 +46,36 @@ export class ProviderRoutes {
         fileUploadHandler(),
         this.providerController.sendVerification
       );
+
+    this.router
+      .route("/service")
+      .get(
+        auth( USER_ROLES.PROVIDER ),
+        this.providerController.providerServices
+      )
+      .post(
+        auth( USER_ROLES.PROVIDER ),
+        validateRequest( ProviderValidation.createServiceSchema ),
+        this.providerController.addService
+      );
+
+    this.router
+      .route("/service/:id")
+      .get(
+        auth( USER_ROLES.PROVIDER ),
+        validateRequest( ProviderValidation.viewServiceSchema ),
+        this.providerController.viewService
+      )
+      .patch(
+        auth( USER_ROLES.PROVIDER ),
+        validateRequest( ProviderValidation.updateServiceSchema ),
+        this.providerController.updateService
+      )
+      .delete(
+        auth( USER_ROLES.PROVIDER ),
+        validateRequest( ProviderValidation.deleteServiceSchema ),
+        this.providerController.deleteService
+      );
   }
 }
  
