@@ -32,7 +32,7 @@ export class ProviderRepository {
   async viewVerification(user: Types.ObjectId){
     return Verification.findOne({
       user
-    }).lean().exec();
+    }).select("-updatedAt -user").lean().exec();
   }
 
   async createVerificationRequest(data: IVerificaiton){
@@ -40,6 +40,7 @@ export class ProviderRepository {
   }
   
   async updateVerificationRequest(id: Types.ObjectId, data: IVerificaiton){
-    return Verification.updateOne({ _id: id}, data)
+    return Verification.findByIdAndUpdate(id, data, { new: true }).lean().exec()
   }
+  
 }

@@ -6,6 +6,7 @@ import { JwtPayload } from "jsonwebtoken";
 import { IUser } from "../user/user.interface";
 import unlinkFile from "../../../shared/unlinkFile";
 import { IVerificaiton } from "../verification/verification.interface";
+import { VERIFICATION_STATUS } from "../../../enums/user";
 
 export class ProviderService {
   private providerRepo: ProviderRepository;
@@ -90,10 +91,21 @@ export class ProviderService {
     }}
   }
 
+  // Have to add the notification push
   public async sendVerificaitonRequest(
     payload: JwtPayload,
     data: IVerificaiton
   ) {
+    const userObjID = new mongoose.Types.ObjectId( payload.id );
+    const isVerifirequestExist = await this.providerRepo.viewVerification( userObjID );
+    if (isVerifirequestExist) {
+      if (isVerifirequestExist.status == VERIFICATION_STATUS.PENDING) {
+        throw new ApiError(
+          StatusCodes.EXPECTATION_FAILED,
+          "You are already sended the request so you must wait"
+        )
+      }
+    }
 
     if (!data.license) {
       throw new ApiError(
@@ -108,16 +120,22 @@ export class ProviderService {
         "License not found!"
       )
     }
-
-    const userObjID = new mongoose.Types.ObjectId( payload.id );
-    const isVerifirequestExist = await this.providerRepo.viewVerification( userObjID );
+    
     if (!isVerifirequestExist) {
       await this.providerRepo.createVerificationRequest({
         ...data,
+        status: VERIFICATION_STATUS.PENDING,
         user: payload.id
       })
+      return
     }
-    await this.providerRepo.updateVerificationRequest(userObjID,data)
+    //@ts-ignore
+    delete isVerifirequestExist?.status
+
+    await this.providerRepo.updateVerificationRequest(isVerifirequestExist._id,{
+      ...data,
+      status: VERIFICATION_STATUS.PENDING
+    })
 
     return data
   }
