@@ -1,0 +1,24 @@
+export enum USER_ROLES {
+  ADMIN = 'ADMIN',
+  CLIENT = 'CLIENT',
+  PROVIDER = 'PROVIDER'
+}
+
+export enum STATUS {
+  ACTIVE = 'ACTIVE',
+  DELETED = 'DELETED',
+  BLOCKED = 'BLOCKED'
+}
+
+export enum GENDER {
+  MAN = 'MAN',
+  WOMAN = 'WOMAN',
+  OTHER = 'OTHER'
+}
+
+export enum VERIFICATION_STATUS {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  UNVERIFIED = 'UNVERIFIED'
+}

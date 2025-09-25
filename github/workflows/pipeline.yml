@@ -1,0 +1,41 @@
+name: Pipeline   
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  run_pull:
+    name: Run Pull
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Eslint check
+      run: npm run lint:check
+
+    - name: Build application
+      run: npm run build
+
+    - name: Install ssh keys
+      run: |
+        install -m 600 -D /dev/null ~/.ssh/id_rsa
+        echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+        ssh-keyscan ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+      
+    - name: connect and pull
+      run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "cd ./Whisper-Wings-app && git pull && sudo docker compose up --build --force-recreate --remove-orphans -d"
+
+    - name: cleanup
+      run: |
+        rm -rf ~/.ssh
