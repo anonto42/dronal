@@ -4,6 +4,7 @@ import { ClientValidation } from "./client.validation";
 import auth from "../../middlewares/auth";
 import fileUploadHandler from "../../middlewares/fileUploadHandler";
 import { USER_ROLES } from "../../../enums/user";
+import validateRequest from "../../middlewares/validateRequest";
 
 export class ClientRoutes {
   public router: Router;
@@ -17,7 +18,6 @@ export class ClientRoutes {
 
   private initializeRoutes(): void {
     
-    // GET /profile
     this
     .router
     .route("/")
@@ -25,23 +25,57 @@ export class ClientRoutes {
       auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
       this.clientController.getUserProfile
     )
-
-    // PATCH /profile
-    this
-    .router
-    .route("/profile")
     .patch(
       auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest( ClientValidation.updateUserZodSchema ),
       fileUploadHandler(),
-      (req: Request, res: Response, next: NextFunction) => {
-        if (req.body.data) {
-          req.body = ClientValidation.updateUserZodSchema.parse(
-            JSON.parse(req.body.data)
-          );
-        }
-        return this.clientController.updateProfile(req, res, next);
-      }
+      this.clientController.updateProfile
+    )
+    .delete(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      this.clientController.deleteProfile
     );
+
+    this
+    .router
+    .route("/providers")
+    .get(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest(ClientValidation.getPaginationZodSchema),
+      this.clientController.getProviders
+    );
+
+    this
+    .router
+    .route("/providers/:id")
+    .get(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      this.clientController.getProviderById
+    );
+
+    this
+    .router
+    .route("/favorites")
+    .get(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest(ClientValidation.getPaginationZodSchema),
+      this.clientController.getFavorites
+    );
+
+    this
+    .router
+    .route("/favorites/:id")
+    .post(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest(ClientValidation.AddFavoriteZodSchema),
+      this.clientController.addFavorite
+    )
+    .delete(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest(ClientValidation.RemoveFavoriteZodSchema),
+      this.clientController.removeFavorite
+    );
+
   }
 }
 
