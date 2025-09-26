@@ -28,6 +28,12 @@ export class AuthService {
     const existingUser = await this.authRepo.findUserByEmail(payload.email!);
 
     if (existingUser) {
+      if ([STATUS.BLOCKED, STATUS.DELETED].includes(existingUser?.status)) {
+        throw new ApiError(400, `Your account is ${existingUser?.status}`);
+      }
+    }
+
+    if (existingUser) {
       const otp = generateOTP(6);
       const values = { name: existingUser.name, otp, email: existingUser.email! };
       emailHelper.sendEmail(htmlTemplate.createAccount(values));
@@ -142,6 +148,10 @@ export class AuthService {
   public async forgetPassword(email: string) {
     const user = await this.authRepo.findUserByEmail(email);
     if (!user) throw new ApiError(400, "User doesn't exist");
+
+    if ([STATUS.BLOCKED, STATUS.DELETED].includes(user?.status)) {
+      throw new ApiError(400, `Your account is ${user?.status}`);
+    }
 
     const otp = generateOTP(6);
     emailHelper.sendEmail(htmlTemplate.resetPassword({ otp, email: user.email }));
