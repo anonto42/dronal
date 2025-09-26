@@ -6,7 +6,7 @@ import { JwtPayload } from "jsonwebtoken";
 import { IUser } from "../user/user.interface";
 import unlinkFile from "../../../shared/unlinkFile";
 import { IVerificaiton } from "../verification/verification.interface";
-import { VERIFICATION_STATUS } from "../../../enums/user";
+import { STATUS, VERIFICATION_STATUS } from "../../../enums/user";
 import { IService } from "../service/service.interface";
 import bcrypt from "bcryptjs";
 
@@ -74,7 +74,7 @@ export class ProviderService {
       )
     };
 
-    await this.providerRepo.delete( provider._id );
+    await this.providerRepo.update(provider._id, { status: STATUS.DELETED });
 
   }
 
