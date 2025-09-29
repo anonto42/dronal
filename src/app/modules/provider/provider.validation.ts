@@ -15,6 +15,12 @@ const updateProviderProfileSchema = z.object({
     whatsApp: z.string().optional(), 
     nationalId: z.string().optional(), 
     address: z.string().optional(),
+    distance: z.coerce.number().optional(),
+    availableDay: z.array(z.enum([SERVICE_DAY.FRI,SERVICE_DAY.MON,SERVICE_DAY.SAT,SERVICE_DAY.SUN,SERVICE_DAY.THU,SERVICE_DAY.TUE,SERVICE_DAY.WED]), { invalid_type_error: "Available day is required" }).optional(),
+    startTime: z.string({ invalid_type_error: "Start time is required" }).optional(),
+    endTime: z.string({ invalid_type_error: "End time is required" }).optional(),
+    longitude: z.coerce.number().optional(),
+    latitude: z.coerce.number().optional(),
   }).strict()
 });
 
@@ -23,10 +29,6 @@ const createServiceSchema = z.object({
     category: z.string({ required_error: "Category is required" }),
     subCategory: z.string({ required_error: "SubCategory is required" }),
     price: z.coerce.number({ required_error: "Price is required" }),
-    distance: z.coerce.number({ required_error: "Distance is required" }),
-    availableDay: z.array(z.enum([SERVICE_DAY.FRI,SERVICE_DAY.MON,SERVICE_DAY.SAT,SERVICE_DAY.SUN,SERVICE_DAY.THU,SERVICE_DAY.TUE,SERVICE_DAY.WED]), { invalid_type_error: "Available day is required" }),
-    startTime: z.string({ required_error: "Start time is required" }),
-    endTime: z.string({ required_error: "End time is required" }),
   }).strict()
 });
 
@@ -38,12 +40,6 @@ const updateServiceSchema = z.object({
     category: z.string({ invalid_type_error: "Category is required" }).optional(),
     subCategory: z.string({ invalid_type_error: "SubCategory is required" }).optional(),
     price: z.coerce.number({ invalid_type_error: "Price is required" }).optional(),
-    distance: z.coerce.number({ invalid_type_error: "Distance is required" }).optional(),
-    availableDay: z.array(z.enum([SERVICE_DAY.FRI,SERVICE_DAY.MON,SERVICE_DAY.SAT,SERVICE_DAY.SUN,SERVICE_DAY.THU,SERVICE_DAY.TUE,SERVICE_DAY.WED]), { invalid_type_error: "Available day is required" }).optional(),
-    startTime: z.string({ invalid_type_error: "Start time is required" }).optional(),
-    endTime: z.string({ invalid_type_error: "End time is required" }).optional(),
-    longitude: z.coerce.number().optional(),
-    latitude: z.coerce.number().optional(),
   }).strict()
 });
 
@@ -59,10 +55,32 @@ const viewServiceSchema = z.object({
   }).strict()
 });
 
+const getPaginationZodSchema = z.object({
+  query: z.object({
+    page: z.string().optional().default("1"),
+    limit: z.string().optional().default("10"),
+    sortBy: z.string().optional().default("createdAt"),
+    sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+  }).strict(),
+  body: z.object({
+    status: z.enum(["pending", "upcoming", "history", "completed", "canceld"]).optional().default("pending"),
+  }).strict(),
+});
+
+const bookingsActionZodSchema = z.object({
+  body: z.object({
+    action: z.enum(["accept", "reject"]).optional().default("accept"),
+    bookId: z.string({ required_error: "Booking id is required" }),
+    reason: z.string().optional(),
+  }).strict(),
+});
+
 export const ProviderValidation = {
   updateProviderProfileSchema,
   createServiceSchema,
   updateServiceSchema,
   deleteServiceSchema,
-  viewServiceSchema
+  viewServiceSchema,
+  getPaginationZodSchema,
+  bookingsActionZodSchema
 };

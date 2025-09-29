@@ -98,6 +98,10 @@ export class ProviderController {
 
   public addService = catchAsync(async (req: Request, res: Response) => {
 
+    const image = getSingleFilePath(req.files,"image");
+
+    if (image) req.body.image = image;
+
     const result = await this.providerService.addService(req.user,req.body);
 
     sendResponse(res, {
@@ -122,6 +126,10 @@ export class ProviderController {
 
   public updateService = catchAsync(async (req: Request, res: Response) => {
 
+    const image = getSingleFilePath(req.files,"image");
+
+    if (image) req.body.image = image;
+
     const result = await this.providerService.updateService(req.user,req.params.id,req.body);
 
     sendResponse(res, {
@@ -140,6 +148,54 @@ export class ProviderController {
       success: true,
       statusCode: StatusCodes.OK,
       message: "Successfully get service",
+      data: result,
+    });
+  });
+
+  public cancelBooking = catchAsync(async (req: Request | any, res: Response) => {
+
+    // const result = await this.clientService.cancelBooking(req.user, req.params.id);
+
+    // sendResponse(res, {
+    //   success: true,
+    //   statusCode: StatusCodes.OK,
+    //   message: "Successfully cancel Booking",
+    //   data: result,
+    // });
+  });
+
+  public getBookings = catchAsync(async (req: Request | any, res: Response) => {
+
+    const result = await this.providerService.getBookings(req.user, req.query, req.body);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Bookings retrieved successfully",
+      data: result,
+    });
+  });
+
+  public actionBooking = catchAsync(async (req: Request | any, res: Response) => {
+
+    const result = await this.providerService.actionBooking(req.user, req.body);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Bookings retrieved successfully",
+      data: result,
+    });
+  });
+
+  public seeBooking = catchAsync(async (req: Request | any, res: Response) => {
+
+    const result = await this.providerService.seeBooking(req.user, req.params.id );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Bookings retrieved successfully",
       data: result,
     });
   });

@@ -55,6 +55,7 @@ export class ProviderRoutes {
       )
       .post(
         auth( USER_ROLES.PROVIDER ),
+        fileUploadHandler(),
         validateRequest( ProviderValidation.createServiceSchema ),
         this.providerController.addService
       );
@@ -68,6 +69,7 @@ export class ProviderRoutes {
       )
       .patch(
         auth( USER_ROLES.PROVIDER ),
+        fileUploadHandler(),
         validateRequest( ProviderValidation.updateServiceSchema ),
         this.providerController.updateService
       )
@@ -76,6 +78,31 @@ export class ProviderRoutes {
         validateRequest( ProviderValidation.deleteServiceSchema ),
         this.providerController.deleteService
       );
+
+    this
+    .router
+    .route("/book")
+    .get(
+      auth(USER_ROLES.PROVIDER),
+      validateRequest(ProviderValidation.getPaginationZodSchema),
+      this.providerController.getBookings
+    )
+    .post(
+      auth(USER_ROLES.PROVIDER),
+      validateRequest(ProviderValidation.bookingsActionZodSchema),
+      this.providerController.actionBooking
+    )
+
+    this
+    .router
+    .route("/book/:id")
+    .get(
+      auth(USER_ROLES.PROVIDER),
+      validateRequest(ProviderValidation.viewServiceSchema),
+      this.providerController.seeBooking
+    )
+
+
   }
 }
  

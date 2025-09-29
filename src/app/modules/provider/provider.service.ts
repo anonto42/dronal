@@ -9,6 +9,10 @@ import { IVerificaiton } from "../verification/verification.interface";
 import { STATUS, VERIFICATION_STATUS } from "../../../enums/user";
 import { IService } from "../service/service.interface";
 import bcrypt from "bcryptjs";
+import { IPaginationOptions } from "../../../types/pagination";
+import { IBooking } from "../booking/booking.interface";
+import { Types } from "mongoose";
+import { BOOKING_STATUS } from "../../../enums/booking";
 
 export class ProviderService {
   private providerRepo: ProviderRepository;
@@ -22,7 +26,7 @@ export class ProviderService {
   ) {
     const provider = await this.providerRepo.findById(
       new mongoose.Types.ObjectId( payload.id ),
-      "name image overView gender dateOfBirth nationality experience language contact whatsApp nationalId email address"
+      "name image overView gender dateOfBirth nationality experience language contact whatsApp nationalId email address distance availableDay startTime endTime"
     )
     if (!provider) {
       throw new ApiError(
@@ -161,9 +165,9 @@ export class ProviderService {
     }
   ) {
     const result = await this.providerRepo.providerServices({
-      filter: { user: new mongoose.Types.ObjectId( payload.id ) },
+      filter: { creator: new mongoose.Types.ObjectId( payload.id ) },
       paginationOptions: query,
-      select:"-__v -updatedAt -user"
+      select:"-__v -updatedAt -creator"
     });
     return result
   }
@@ -172,10 +176,18 @@ export class ProviderService {
     payload: JwtPayload,
     data: Partial<IService>
   ) {
-    const result = await this.providerRepo.addService({...data,user: new mongoose.Types.ObjectId( payload.id )});
+
+    if(!data.image){
+      throw new ApiError(
+        StatusCodes.NOT_FOUND,
+        "Image not found!"
+      )
+    }
+    
+    const result = await this.providerRepo.addService({...data, creator: new mongoose.Types.ObjectId( payload.id )});
 
     //@ts-ignore
-    delete result.user
+    delete result.creator
     //@ts-ignore
     delete result.__v
     //@ts-ignore
@@ -219,6 +231,7 @@ export class ProviderService {
     id: string,
     data: Partial<IService>
   ) {
+
     const result = await this.providerRepo.updateService(new mongoose.Types.ObjectId(id),data);
     if (!result) {
       throw new ApiError(
@@ -227,8 +240,12 @@ export class ProviderService {
       )
     }
 
+    if (data.image && result.image) {
+      unlinkFile(result.image);
+    }
+
     //@ts-ignore
-    delete result.user
+    delete result.creator
     //@ts-ignore
     delete result.__v
     //@ts-ignore
@@ -246,9 +263,9 @@ export class ProviderService {
     id: string
   ) {
     const result = await this.providerRepo.providerServices({
-      filter: { user: new mongoose.Types.ObjectId( payload.id ), _id: new mongoose.Types.ObjectId( id ) },
+      filter: { creator: new mongoose.Types.ObjectId( payload.id ), _id: new mongoose.Types.ObjectId( id ) },
       paginationOptions: { page: 1, limit: 1 },
-      select:"-__v -updatedAt -user"
+      select:"-__v -updatedAt -creator"
     });
     if (!result.length) {
       throw new ApiError(
@@ -258,7 +275,7 @@ export class ProviderService {
     }
 
     //@ts-ignore
-    delete result.user
+    delete result.creator
     //@ts-ignore
     delete result.__v
     //@ts-ignore
@@ -269,6 +286,76 @@ export class ProviderService {
     delete result._id
     
     return result[0]
+  }
+
+  public async getBookings (user: JwtPayload, query: IPaginationOptions, body: { status: "pending" | "upcoming" | "history" | "rejected" | "completed" }) {
+
+    const bookings = await this.providerRepo.findBookings({ 
+      filter: { 
+        provider: user.id!,
+        isPaid: true,
+        //@ts-ignore
+        isDeleted: { $ne: true }, //@ts-ignore
+        bookingStatus: body.status == "pending" ? BOOKING_STATUS.PENDING : body.status == "upcoming" ? BOOKING_STATUS.ACCEPTED : body.status == "rejected" ? BOOKING_STATUS.REJECTED : body.status == "completed" ? BOOKING_STATUS.COMPLETED : { $ne: BOOKING_STATUS.PENDING } //@ts-ignore
+      },
+      paginationOptions: query,
+      select: "customer service date bookingStatus", //@ts-ignore
+      populate: [
+        {
+          path: "customer",
+          select: "name image address"
+        },
+        {
+          path: "service",
+          select: "name image price category subCategory"
+        }
+      ]
+    });
+  
+    if (!bookings?.length) throw new ApiError(StatusCodes.NOT_FOUND, "Bookings not found!");
+  
+    return bookings;
+  }
+  
+  public async actionBooking (user: JwtPayload, data: { bookId: string, action: "accept" | "reject", reason?: string }) {
+      const booking = await this.providerRepo.findBookings({ filter: { _id: new mongoose.Types.ObjectId(data.bookId) } });
+      
+      if (!booking.length) throw new ApiError(StatusCodes.NOT_FOUND, "Booking not found!");
+      if (booking[0].bookingStatus != BOOKING_STATUS.PENDING) throw new ApiError(StatusCodes.NOT_FOUND, "Booking already interacted!");
+
+      if (data.action == "accept") {
+        await this.providerRepo.updateBooking(new mongoose.Types.ObjectId(data.bookId), { bookingStatus: BOOKING_STATUS.ACCEPTED });
+      }else if (data.action == "reject") {
+        await this.providerRepo.updateBooking(new mongoose.Types.ObjectId(data.bookId), { bookingStatus: BOOKING_STATUS.REJECTED, rejectReason: data.reason });
+      }
+  
+  }
+
+  public async seeBooking (user: JwtPayload, id: string ) {
+
+    const booking = await this.providerRepo.findBookings({ filter: { _id: new mongoose.Types.ObjectId(id) },//@ts-ignore
+     populate: [{
+      path: "service",
+      select: "image price category subCategory"
+    },{
+      path: "customer",
+      select: "name image address category"
+    }] });
+    if (!booking.length) throw new ApiError(StatusCodes.NOT_FOUND, "Booking not found!");
+
+    return {
+      service: {
+        ...booking[0].service,
+        date: booking[0].date
+      },
+      details: {
+        status: booking[0].bookingStatus,//@ts-ignore
+        fee: booking[0].service.price,   //@ts-ignore
+        address: booking[0].address, //@ts-ignore
+        specialNote: booking[0].specialNote, //@ts-ignore
+        customer: booking[0].customer //@ts-ignore
+      }
+    };
   }
 
 }
