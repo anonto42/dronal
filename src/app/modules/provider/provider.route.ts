@@ -102,6 +102,14 @@ export class ProviderRoutes {
       this.providerController.seeBooking
     )
 
+    this
+    .router
+    .route("/categories")
+    .get(
+      auth(USER_ROLES.PROVIDER),
+      validateRequest(ProviderValidation.getCategoriesSchema),
+      this.providerController.getCategories
+    )
 
   }
 }

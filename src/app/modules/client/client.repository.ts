@@ -14,6 +14,7 @@ import { ICustomerFavorite } from '../favorites/customer.favorite.interface';
 import { IBooking } from '../booking/booking.interface';
 import { Booking } from '../booking/booking.model';
 import { BOOKING_STATUS } from '../../../enums/booking';
+import { Category } from '../category/category.model';
 
 export class ClientRepository {
 
@@ -151,5 +152,10 @@ export class ClientRepository {
     }
 
     return query.lean().exec();
+  }
+
+  async getCategories(query: IPaginationOptions) {
+    const { page=1, limit=10, sortBy="createdAt", sortOrder="desc" } = query;
+    return Category.find().select("-createdAt -updatedAt -__v -isDeleted").lean().skip((page - 1) * limit).limit(limit).sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 }).exec();
   }
 }

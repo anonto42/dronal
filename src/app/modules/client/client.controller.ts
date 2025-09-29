@@ -183,4 +183,16 @@ export class ClientController {
     });
   });
 
+  public getCategories = catchAsync(async (req: Request | any, res: Response) => {
+
+    const result = await this.clientService.getCategories(req.query);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Categories retrieved successfully",
+      data: result,
+    });
+  });
+
 }

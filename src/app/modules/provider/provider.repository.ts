@@ -11,6 +11,7 @@ import { paginationHelper } from "../../../helpers/paginationHelper";
 import { STATUS } from "../../../enums/user";
 import { IBooking } from "../booking/booking.interface";
 import { Booking } from "../booking/booking.model";
+import { Category } from "../category/category.model";
 
 export class ProviderRepository {
 
@@ -140,5 +141,10 @@ export class ProviderRepository {
 
   async updateBooking(id: Types.ObjectId, payload: Partial<IBooking>){
     return Booking.findByIdAndUpdate(id, payload, { new: true }).lean().exec();
+  }
+
+  async getCategories(query: IPaginationOptions) {
+    const { page=1, limit=10, sortBy="createdAt", sortOrder="desc" } = query;
+    return Category.find().select("-createdAt -updatedAt -__v -isDeleted").lean().skip((page - 1) * limit).limit(limit).sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 }).exec();
   }
 }

@@ -358,4 +358,7 @@ export class ProviderService {
     };
   }
 
+  public async getCategories (query: IPaginationOptions) {
+    return this.providerRepo.getCategories(query);
+  }
 }

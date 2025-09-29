@@ -119,6 +119,15 @@ export class ClientRoutes {
       this.clientController.seeBooking
     )
 
+    this
+    .router
+    .route("/categories")
+    .get(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest(ClientValidation.getCategoriesZodSchema),
+      this.clientController.getCategories
+    )
+
   }
 }
 

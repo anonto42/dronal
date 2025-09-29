@@ -200,4 +200,16 @@ export class ProviderController {
     });
   });
 
+  public getCategories = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await this.providerService.getCategories(req.query as any);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Categories retrieved successfully",
+      data: result,
+    });
+  });
+
 }

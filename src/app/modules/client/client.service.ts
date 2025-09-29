@@ -266,4 +266,11 @@ export class ClientService {
     };
   }
 
+  public async getCategories(query: IPaginationOptions) {
+    const categories = await this.userRepo.getCategories(query);
+    if (!categories) throw new ApiError(StatusCodes.NOT_FOUND, "Categories not found!");
+
+    return categories;
+  }
+
 }
