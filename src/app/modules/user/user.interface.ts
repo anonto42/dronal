@@ -1,7 +1,10 @@
 import { Model, Types } from 'mongoose';
 import { GENDER, STATUS, USER_ROLES, VERIFICATION_STATUS } from '../../../enums/user';
+import { SERVICE_DAY } from '../../../enums/service';
 
 export type IUser = {
+  _id: Types.ObjectId;
+
   // Worker
   name: string;
   contact: string;
@@ -29,6 +32,10 @@ export type IUser = {
     type: "Point",
     coordinates: [Number]
   };
+  distance: number,
+  availableDay: SERVICE_DAY[],
+  startTime: string,
+  endTime: string
 
   // Auth
   status: STATUS;

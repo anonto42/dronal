@@ -5,6 +5,7 @@ import config from '../../../config';
 import { GENDER, STATUS, USER_ROLES, VERIFICATION_STATUS } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
 import { IUser, UserModal } from './user.interface';
+import { SERVICE_DAY } from '../../../enums/service';
 
 const userSchema = new Schema<IUser, UserModal>(
   {
@@ -106,6 +107,25 @@ const userSchema = new Schema<IUser, UserModal>(
         type: [Number],
         default: [0,0]
       }
+    },
+
+    // Provider
+    distance:{
+      type: Number,
+      default: 20
+    },
+    availableDay:{
+        type: [String],
+        enum: Object.values(SERVICE_DAY),
+        default: []
+    },
+    startTime:{
+        type: String,
+        default: ""
+    },
+    endTime:{
+        type: String,
+        default: ""
     },
 
     // Basic auth
