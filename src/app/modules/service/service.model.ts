@@ -1,11 +1,14 @@
 import { model, Schema } from "mongoose";
 import { IService } from "./service.interface";
-import { SERVICE_DAY } from "../../../enums/service";
 
 const serviceSchema = new Schema<IService>({
-    user:{
+    creator:{
         type: Schema.Types.ObjectId,
         ref: "User"
+    },
+    image:{
+        type: String,
+        required: true
     },
     category:{
         type: String,
@@ -19,22 +22,9 @@ const serviceSchema = new Schema<IService>({
         type: Number,
         required: true
     },
-    distance:{
-        type: Number,
-        required: true
-    },
-    availableDay:{
-        type: [String],
-        enum: Object.values(SERVICE_DAY),
-        required: true
-    },
-    startTime:{
-        type: String,
-        required: true
-    },
-    endTime:{
-        type: String,
-        required: true
+    isDeleted:{
+        type: Boolean,
+        default: false
     }
 },{
     timestamps: true,
