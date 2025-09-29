@@ -7,3 +7,18 @@ export enum SERVICE_DAY {
     FRI = "fri",
     SAT = "sat"
 }
+
+export enum SERVICE_MONTH {
+    JAN = "jan",
+    FEB = "feb",
+    MAR = "mar",
+    APR = "apr",
+    MAY = "may",
+    JUN = "jun",
+    JUL = "jul",
+    AUG = "aug",
+    SEP = "sep",
+    OCT = "oct",
+    NOV = "nov",
+    DEC = "dec"
+}
