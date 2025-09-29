@@ -5,6 +5,8 @@ import ProviderRoutes from '../app/modules/provider/provider.route';
 import NotificationRoutes from '../app/modules/notification/notification.route';
 import ChatRoutes from '../app/modules/chat/chat.route';
 import MessageRoutes from '../app/modules/Message/message.route';
+import PaymentRoutes from '../app/modules/payment/payment.route';
+import AdminRoutes from '../app/modules/admin/admin.route';
 const router = express.Router();
 
 const apiRoutes = [
@@ -31,6 +33,14 @@ const apiRoutes = [
   {
     path: '/message',
     route: MessageRoutes
+  },
+  {
+    path: '/payment',
+    route: PaymentRoutes
+  },
+  {
+    path: '/admin',
+    route: AdminRoutes
   }
 ];
 
