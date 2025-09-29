@@ -51,20 +51,20 @@ export class ClientController {
     });
   });
 
-  public getProviders = catchAsync(async (req: Request | any, res: Response) => {
+  public getServices = catchAsync(async (req: Request | any, res: Response) => {
     
-    const result = await this.clientService.getProviders(req.user, req.query);
+    const result = await this.clientService.getServices(req.user, req.query);
 
     sendResponse(res, {
       success: true,
       statusCode: StatusCodes.OK,
-      message: "Providers retrieved successfully",
+      message: "Services retrieved successfully",
       data: result,
     });
   });
 
   public getProviderById = catchAsync(async (req: Request | any, res: Response) => {
-    const result = await this.clientService.getProviderById(req.user, req.params.id);
+    const result = await this.clientService.getProviderById(req.user, req.params.id, req.query);
 
     sendResponse(res, {
       success: true,
@@ -103,6 +103,82 @@ export class ClientController {
       success: true,
       statusCode: StatusCodes.OK,
       message: "Favorite removed successfully",
+      data: result,
+    });
+  });
+
+  public createBooking = catchAsync(async (req: Request | any, res: Response) => {
+
+    if( req.body.longitude && req.body.latitude) req.body.location = { type: "Point", coordinates: [Number(req.body.longitude), Number(req.body.latitude)] };
+
+    const result = await this.clientService.sendBooking(req.user, req.body, req);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Successfully create Booking",
+      data: result,
+    });
+  });
+
+  public updateBooking = catchAsync(async (req: Request | any, res: Response) => {
+
+    if( req.body.longitude && req.body.latitude) req.body.location = { type: "Point", coordinates: [Number(req.body.longitude), Number(req.body.latitude)] };
+
+    const result = await this.clientService.updateBooking(req.user, req.params.id, req.body);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Successfully update Booking",
+      data: result,
+    });
+  });
+
+  public cancelBooking = catchAsync(async (req: Request | any, res: Response) => {
+
+    const result = await this.clientService.cancelBooking(req.user, req.params.id);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Successfully cancel Booking",
+      data: result,
+    });
+  });
+
+  public getBookings = catchAsync(async (req: Request | any, res: Response) => {
+
+    const result = await this.clientService.getBookings(req.user, req.query, req.body);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Bookings retrieved successfully",
+      data: result,
+    });
+  });
+  
+  public bookScreen = catchAsync(async (req: Request | any, res: Response) => {
+
+    const result = await this.clientService.bookScreen(req.params.id, req.query);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Bookings screen retrieved successfully",
+      data: result,
+    });
+  });
+
+  public seeBooking = catchAsync(async (req: Request | any, res: Response) => {
+
+    const result = await this.clientService.seeBooking(req.user, req.params.id);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Bookings screen retrieved successfully",
       data: result,
     });
   });

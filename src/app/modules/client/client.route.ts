@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router } from "express";
 import { ClientController } from "./client.controller";
 import { ClientValidation } from "./client.validation";
 import auth from "../../middlewares/auth";
@@ -38,18 +38,19 @@ export class ClientRoutes {
 
     this
     .router
-    .route("/providers")
+    .route("/services")
     .get(
       auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
       validateRequest(ClientValidation.getPaginationZodSchema),
-      this.clientController.getProviders
+      this.clientController.getServices
     );
 
     this
     .router
-    .route("/providers/:id")
+    .route("/provider/:id")
     .get(
       auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest(ClientValidation.aProviderZodSchema),
       this.clientController.getProviderById
     );
 
@@ -75,6 +76,48 @@ export class ClientRoutes {
       validateRequest(ClientValidation.RemoveFavoriteZodSchema),
       this.clientController.removeFavorite
     );
+
+    this
+    .router
+    .route("/book")
+    .get(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest(ClientValidation.getPaginationZodSchema),
+      this.clientController.getBookings
+    )
+    .post(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest(ClientValidation.createBookingZodSchema),
+      this.clientController.createBooking
+    )
+
+    this
+    .router
+    .route("/book/:id")
+    .get(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest(ClientValidation.getPaginationZodSchema),
+      this.clientController.bookScreen
+    )
+    .patch(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest(ClientValidation.updateBookingZodSchema),
+      this.clientController.updateBooking
+    )
+    .delete(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest(ClientValidation.removeBookingZodSchema),
+      this.clientController.cancelBooking
+    )
+
+    this
+    .router
+    .route("/book/view/:id")
+    .get(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest(ClientValidation.getPaginationZodSchema),
+      this.clientController.seeBooking
+    )
 
   }
 }

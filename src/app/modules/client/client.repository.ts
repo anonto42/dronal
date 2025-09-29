@@ -1,11 +1,22 @@
 import { paginationHelper } from '../../../helpers/paginationHelper';
 import { IPaginationOptions } from '../../../types/pagination';
 import { CustomerFavorite } from '../favorites/customer.favorite.model';
+import { IReview } from '../review/review.interface';
+import { Review } from '../review/review.model';
+import { IService } from '../service/service.interface';
+import { Service } from '../service/service.model';
 import { IUser } from '../user/user.interface';
 import { User } from '../user/user.model';
 import { PopulateOptions, Types } from 'mongoose';
+import { IVerificaiton } from '../verification/verification.interface';
+import { Verification } from '../verification/verification.model';
+import { ICustomerFavorite } from '../favorites/customer.favorite.interface';
+import { IBooking } from '../booking/booking.interface';
+import { Booking } from '../booking/booking.model';
+import { BOOKING_STATUS } from '../../../enums/booking';
 
 export class ClientRepository {
+
   async findById(id: Types.ObjectId,select?: string) {
     return User.findById(id).select(select?? "").lean().exec();
   }
@@ -33,13 +44,13 @@ export class ClientRepository {
       populate,
       paginationOptions
     } : { 
-      filter: Partial<IUser>; 
+      filter: Partial<IService>; 
       select?: string; 
       populate?: PopulateOptions; 
       paginationOptions?: IPaginationOptions 
     }
-  ): Promise<IUser[] | []> {
-    let query = User.find(filter);
+  ): Promise<IService[] | []> {
+    let query = Service.find(filter);
 
     // Only populate if defined
     if (populate) {
@@ -80,7 +91,65 @@ export class ClientRepository {
     return CustomerFavorite.findByIdAndDelete(id).lean().exec();
   }
 
-  async getFavorites(user: Types.ObjectId,select?: string) {
-    return CustomerFavorite.find({ customer: user }).populate("provider",select?? "").select("provider").lean().exec();
+  async getFavorites(query: Partial<ICustomerFavorite>,select?: string) {
+    return CustomerFavorite.find(query).populate("provider",select?? "").select("provider").lean().exec();
+  }
+
+  async getReviews(query: Partial<IReview>,select?: string) {
+    return Review.find(query).populate("provider",select?? "").select("provider").lean().exec();
+  }
+
+  async getValidationRequests( query: Partial<IVerificaiton>,select?: string): Promise<IVerificaiton | null> {
+    return Verification.findOne(query).populate("user",select?? "").lean().exec();
+  }
+
+  async createBooking(payload: Partial<IBooking>) {
+    return Booking.create(payload);
+  }
+
+  async updateBooking(id: Types.ObjectId, payload: Partial<IBooking>) {
+    return Booking.findByIdAndUpdate(id, payload, { new: true }).lean().exec();
+  }
+
+  async cancelBooking(id: Types.ObjectId) {
+    return Booking.findByIdAndUpdate(id,{bookingStatus: BOOKING_STATUS.CANCELLED}, { new: true }).lean().exec();
+  }
+
+  async findBookings (
+    {
+      filter,
+      select,
+      populate,
+      paginationOptions
+    } : { 
+      filter: Partial<IBooking>; 
+      select?: string; 
+      populate?: PopulateOptions; 
+      paginationOptions?: IPaginationOptions 
+    }
+  ): Promise<IBooking[] | []> {
+    let query = Booking.find(filter);
+
+    // Only populate if defined
+    if (populate) {
+      query = query.populate(populate);
+    }
+
+    // Only select if defined
+    if (select) {
+      query = query.select(select);
+    }
+
+    // Apply pagination if provided
+    if (paginationOptions) {
+      const { skip, limit, sortBy, sortOrder } = paginationHelper.calculatePagination(paginationOptions);
+
+      query = query
+        .skip(skip)
+        .limit(limit)
+        .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 });
+    }
+
+    return query.lean().exec();
   }
 }
