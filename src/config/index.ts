@@ -32,4 +32,8 @@ export default {
     redis_ip: process.env.REDIS_IP_ADDRESS,
     redis_port: process.env.REDIS_PORT
   },
+  stripe:{
+    stripe_public_key: process.env.STRIP_PUBLIC_KEY,
+    stripe_secret_key: process.env.STRIP_SECRET_KEY
+  }
 };
