@@ -212,4 +212,16 @@ export class ProviderController {
     });
   });
 
+  public getCustomer = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await this.providerService.getCustomer( req.params.id as string );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Customer retrieved successfully",
+      data: result,
+    });
+  });
+
 }

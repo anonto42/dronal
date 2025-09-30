@@ -8,7 +8,7 @@ import { Service } from "../service/service.model";
 import { IPaginationOptions } from "../../../types/pagination";
 import { IService } from "../service/service.interface";
 import { paginationHelper } from "../../../helpers/paginationHelper";
-import { STATUS } from "../../../enums/user";
+import { STATUS, USER_ROLES } from "../../../enums/user";
 import { IBooking } from "../booking/booking.interface";
 import { Booking } from "../booking/booking.model";
 import { Category } from "../category/category.model";
@@ -146,5 +146,9 @@ export class ProviderRepository {
   async getCategories(query: IPaginationOptions) {
     const { page=1, limit=10, sortBy="createdAt", sortOrder="desc" } = query;
     return Category.find().select("-createdAt -updatedAt -__v -isDeleted").lean().skip((page - 1) * limit).limit(limit).sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 }).exec();
+  }
+
+  async getAdmins(){
+    return User.find({ role: USER_ROLES.ADMIN }).select("name _id email").lean().exec();
   }
 }

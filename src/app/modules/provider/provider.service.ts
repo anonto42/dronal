@@ -10,9 +10,10 @@ import { STATUS, VERIFICATION_STATUS } from "../../../enums/user";
 import { IService } from "../service/service.interface";
 import bcrypt from "bcryptjs";
 import { IPaginationOptions } from "../../../types/pagination";
-import { IBooking } from "../booking/booking.interface";
-import { Types } from "mongoose";
+import { Notification } from "../notification/notification.model";
+import { emailQueue } from "../../../queues/email.queue";
 import { BOOKING_STATUS } from "../../../enums/booking";
+import { redisDB } from "../../../redis/connectedUsers";
 
 export class ProviderService {
   private providerRepo: ProviderRepository;
@@ -106,7 +107,6 @@ export class ProviderService {
     }}
   }
 
-  // Have to add the notification push
   public async sendVerificaitonRequest(
     payload: JwtPayload,
     data: IVerificaiton
@@ -150,6 +150,19 @@ export class ProviderService {
     await this.providerRepo.updateVerificationRequest(isVerifirequestExist._id,{
       ...data,
       status: VERIFICATION_STATUS.PENDING
+    })
+
+    const admins = await this.providerRepo.getAdmins();
+    
+    admins.forEach(async (admin) => {
+      const notification = await Notification.create({
+        for: admin._id,
+        message: "A new verification request has been sent"
+      })
+      await emailQueue.add("socket-notification", notification, {
+        removeOnComplete: true,
+        removeOnFail: false,
+      });
     })
 
     return data
@@ -325,13 +338,67 @@ export class ProviderService {
 
       if (data.action == "accept") {
         await this.providerRepo.updateBooking(new mongoose.Types.ObjectId(data.bookId), { bookingStatus: BOOKING_STATUS.ACCEPTED });
+
+        const notification = await Notification.create({
+          for: booking[0].customer,
+          message: "Your Booking accepted"
+        })
+
+        const isProviderOnline = await redisDB.get(`user:${booking[0].customer}`);
+        if (!isProviderOnline) {
+          const customer = await this.providerRepo.findById(booking[0].customer) as IUser;
+          await emailQueue.add("push-notification", {
+            notification: {
+              title: "Booking Accepted",
+              body: "Your Booking accepted"
+            },
+            token: customer?.fcmToken
+          }, {
+            removeOnComplete: true,
+            removeOnFail: false,
+          });
+        }
+    
+        await emailQueue.add("socket-notification", notification, {
+          removeOnComplete: true,
+          removeOnFail: false,
+        })
+
       }else if (data.action == "reject") {
         await this.providerRepo.updateBooking(new mongoose.Types.ObjectId(data.bookId), { bookingStatus: BOOKING_STATUS.REJECTED, rejectReason: data.reason });
+
+        const notification = await Notification.create({
+          for: booking[0].customer,
+          message: "Your Booking rejected"
+        })
+
+        const isProviderOnline = await redisDB.get(`user:${booking[0].customer}`);
+        if (!isProviderOnline) {
+          const customer = await this.providerRepo.findById(booking[0].customer) as IUser;
+          await emailQueue.add("push-notification", {
+            notification: {
+              title: "Booking Rejected",
+              body: "Your Booking rejected"
+            },
+            token: customer?.fcmToken
+          }, {
+            removeOnComplete: true,
+            removeOnFail: false,
+          });
+        }
+    
+        await emailQueue.add("socket-notification", notification, {
+          removeOnComplete: true,
+          removeOnFail: false,
+        })
       }
   
   }
 
   public async seeBooking (user: JwtPayload, id: string ) {
+
+    const provider = await this.providerRepo.findById(user.id);
+    if (!provider) throw new ApiError(StatusCodes.NOT_FOUND, "Provider not found!");
 
     const booking = await this.providerRepo.findBookings({ filter: { _id: new mongoose.Types.ObjectId(id) },//@ts-ignore
      populate: [{
@@ -349,11 +416,13 @@ export class ProviderService {
         date: booking[0].date
       },
       details: {
+        distance: provider.distance,
         status: booking[0].bookingStatus,//@ts-ignore
         fee: booking[0].service.price,   //@ts-ignore
         address: booking[0].address, //@ts-ignore
         specialNote: booking[0].specialNote, //@ts-ignore
-        customer: booking[0].customer //@ts-ignore
+        customer: booking[0].customer, //@ts-ignore
+        paymentStatus: booking[0].paymentStatus //@ts-ignore
       }
     };
   }
@@ -361,4 +430,11 @@ export class ProviderService {
   public async getCategories (query: IPaginationOptions) {
     return this.providerRepo.getCategories(query);
   }
+
+  public async getCustomer (user: string) {
+    const customer = this.providerRepo.findById(new mongoose.Types.ObjectId(user),"name image address gender dateOfBirth nationality contact whatsApp");
+    if (!customer) throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found!");
+    return customer
+  }
+
 }

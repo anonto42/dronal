@@ -111,6 +111,15 @@ export class ProviderRoutes {
       this.providerController.getCategories
     )
 
+    this
+    .router
+    .route("/customer/:id")
+    .get(
+      auth(USER_ROLES.PROVIDER),
+      validateRequest(ProviderValidation.viewServiceSchema),
+      this.providerController.getCustomer
+    )
+
   }
 }
  
