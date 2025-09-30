@@ -16,6 +16,9 @@ import { Service } from '../service/service.model';
 import { CustomerFavorite } from '../favorites/customer.favorite.model';
 import { Review } from '../review/review.model';
 import { User } from '../user/user.model';
+import { Notification } from '../notification/notification.model';
+import { emailQueue } from '../../../queues/email.queue';
+import { redisDB } from '../../../redis/connectedUsers';
 
 export class ClientService {
   private userRepo: ClientRepository;
@@ -228,7 +231,6 @@ export class ClientService {
     }
   }
 
-  // Have to work on it
   public async getProviderById(user: JwtPayload, id: Types.ObjectId, query: TServicePagination) {
 
 
@@ -249,7 +251,20 @@ export class ClientService {
       }
     });
 
-    const reviews = await this.userRepo.getReviews({ provider: provider._id },"-updatedAt");
+    const completedTask = await this.userRepo.findBookings({ filter: { provider: provider._id, bookingStatus: BOOKING_STATUS.COMPLETED } });
+
+    const reviews = await this.userRepo.getReviews({ provider: provider._id },"-updatedAt",{
+      limit: query.reviewLimit,
+      page: query.reviewPage,
+      sortOrder: query.reviewSortOrder
+    });
+
+    let averageRating = 0;
+
+    if (reviews.length > 0) {
+      const total = reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+      averageRating = total / reviews.length;
+    }
 
     const validationRequests = await this.userRepo.getValidationRequests({ user: provider._id },"-updatedAt");
 
@@ -263,8 +278,8 @@ export class ClientService {
         name: provider.name,
         image: provider.image,
         experience: provider.experience,
-        complitedTask: 9, // Have to add 
-        rating: 4.5, // Have to count later
+        complitedTask: completedTask?.length ?? 0,
+        rating: averageRating,
       },
       overView:{
         overView: provider.overView,
@@ -279,7 +294,6 @@ export class ClientService {
     };
   }
 
-  // Have to add notification
   public async sendBooking (payload: JwtPayload, data: IBooking, req: Request) {
     
     const service = await this.userRepo.findMany({ filter: { _id: data.service } });
@@ -360,6 +374,31 @@ export class ClientService {
   public async cancelBooking (user: JwtPayload, id: Types.ObjectId) {
     const booking = await this.userRepo.cancelBooking(id);
     if (!booking) throw new ApiError(StatusCodes.NOT_FOUND, "Booking not found!");
+
+    const notification = await Notification.create({
+      for: booking.provider,
+      message: "Your Booking cancelled"
+    })
+
+    const isProviderOnline = await redisDB.get(`user:${booking.provider}`);
+    if (!isProviderOnline) {
+      const provider = await this.userRepo.findById(booking.provider) as IUser;
+      await emailQueue.add("push-notification", {
+        notification: {
+          title: "Booking Cancelled",
+          body: "Your Booking cancelled"
+        },
+        token: provider?.fcmToken
+      }, {
+        removeOnComplete: true,
+        removeOnFail: false,
+      });
+    }
+
+    await emailQueue.add("socket-notification", notification, {
+      removeOnComplete: true,
+      removeOnFail: false,
+    });
 
     return booking;
   }
