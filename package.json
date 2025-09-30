@@ -26,6 +26,7 @@
     "bcryptjs": "^3.0.2",
     "bullmq": "^5.58.6",
     "colors": "^1.4.0",
+    "concurrently": "^9.2.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
@@ -38,11 +39,11 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.14",
     "socket.io": "^4.7.5",
+    "socket.io-client": "^4.8.1",
     "stripe": "^18.1.0",
     "tsc": "^2.0.4",
     "winston": "^3.13.0",
     "winston-daily-rotate-file": "^5.0.0",
-    "concurrently": "^9.2.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
