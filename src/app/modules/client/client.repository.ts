@@ -96,8 +96,26 @@ export class ClientRepository {
     return CustomerFavorite.find(query).populate("provider",select?? "").select("provider").lean().exec();
   }
 
-  async getReviews(query: Partial<IReview>,select?: string) {
-    return Review.find(query).populate("provider",select?? "").select("provider").lean().exec();
+  async getReviews(filter: Partial<IReview>,select?: string,paginationOptions?: IPaginationOptions) {
+    
+    let query = Review.find(filter);
+    
+    // Only select if defined
+    if (select) {
+      query = query.select(select);
+    }
+    
+    // Apply pagination if provided
+    if (paginationOptions) {
+      const { page, limit, sortBy, sortOrder } = paginationHelper.calculatePagination(paginationOptions);
+
+      query = query
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 });
+    }
+
+    return query.lean().exec();
   }
 
   async getValidationRequests( query: Partial<IVerificaiton>,select?: string): Promise<IVerificaiton | null> {
