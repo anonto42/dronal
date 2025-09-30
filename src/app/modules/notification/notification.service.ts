@@ -20,6 +20,7 @@ export class NotificationService {
     return this.notificationRepo.findMany({
       filter:{ for: new mongoose.Types.ObjectId( payload.id )},
       paginationOptions,
+      select: "-for -updatedAt"
     });
   }
 
