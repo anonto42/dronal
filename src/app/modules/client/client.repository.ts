@@ -131,7 +131,7 @@ export class ClientRepository {
   }
 
   async cancelBooking(id: Types.ObjectId) {
-    return Booking.findByIdAndUpdate(id,{bookingStatus: BOOKING_STATUS.CANCELLED}, { new: true }).lean().exec();
+    return Booking.findByIdAndUpdate(id,{bookingStatus: BOOKING_STATUS.CANCELLED}, { new: true }).populate("service").lean().exec();
   }
 
   async findBookings (

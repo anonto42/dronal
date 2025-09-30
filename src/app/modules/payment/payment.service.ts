@@ -48,7 +48,7 @@ export class PaymentService {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Booking transaction ID not found");
     }
 
-    const bookingUpdate = await this.paymentRepo.updateBooking(bookingID);
+    const bookingUpdate = await this.paymentRepo.updateBooking(bookingID, session.payment_intent as string);
     if (!bookingUpdate) {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Booking not found");
     }
@@ -74,6 +74,7 @@ export class PaymentService {
       customer: customerId,
       booking: booking._id,
       amount: service.price,
+      paymentId: session.id,
       paymentStatus: PAYMENT_STATUS.COMPLETED,
     })
 
@@ -104,4 +105,5 @@ export class PaymentService {
 
     return htmlTemplate.paymentSuccess();
   }
+
 }

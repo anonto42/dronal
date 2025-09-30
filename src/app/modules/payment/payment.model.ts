@@ -8,6 +8,7 @@ const paymentSchema = new Schema<IPayment>({
   service: { type: Schema.Types.ObjectId, ref: "Service", required: true },
   booking: { type: Schema.Types.ObjectId, ref: "Booking", required: true },
   amount: { type: Number, required: true },
+  paymentId: { type: String, required: true },
   paymentStatus: { type: String, required: true, enum: PAYMENT_STATUS },
 }, { timestamps: true });
 

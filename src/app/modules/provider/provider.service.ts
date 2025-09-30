@@ -369,7 +369,7 @@ export class ProviderService {
 
         const notification = await Notification.create({
           for: booking[0].customer,
-          message: "Your Booking rejected"
+          message: "Your Booking rejected " + data.reason
         })
 
         const isProviderOnline = await redisDB.get(`user:${booking[0].customer}`);
@@ -378,7 +378,7 @@ export class ProviderService {
           await emailQueue.add("push-notification", {
             notification: {
               title: "Booking Rejected",
-              body: "Your Booking rejected"
+              body: "Your Booking rejected " + data.reason
             },
             token: customer?.fcmToken
           }, {

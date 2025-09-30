@@ -10,7 +10,7 @@ import { Types } from 'mongoose';
 import { TServicePagination } from '../../../types/client';
 import { IBooking } from '../booking/booking.interface';
 import { BOOKING_STATUS } from '../../../enums/booking';
-import { createCheckoutSession } from '../../../helpers/stripeHelper';
+import { createCheckoutSession, refunds } from '../../../helpers/stripeHelper';
 import { Request } from 'express';
 import { Service } from '../service/service.model';
 import { CustomerFavorite } from '../favorites/customer.favorite.model';
@@ -353,7 +353,7 @@ export class ClientService {
       ]
     });
 
-    if (!bookings?.length) throw new ApiError(StatusCodes.NOT_FOUND, "Bookings not found!");
+    if (!bookings?.length) return [];
 
     const formattedBookings = bookings.map((booking: any) => {
       return {
@@ -374,10 +374,19 @@ export class ClientService {
   public async cancelBooking (user: JwtPayload, id: Types.ObjectId) {
     const booking = await this.userRepo.cancelBooking(id);
     if (!booking) throw new ApiError(StatusCodes.NOT_FOUND, "Booking not found!");
-
+    
     const notification = await Notification.create({
       for: booking.provider,
       message: "Your Booking cancelled"
+    })
+
+    //@ts-ignore
+    const refundAmount = ( booking.service.price * 0.05 ) * 100 ;
+    
+    // Have to discous the amount
+    await refunds.create({
+      payment_intent: booking.paymentId,// @ts-ignore
+      amount: refundAmount,
     })
 
     const isProviderOnline = await redisDB.get(`user:${booking.provider}`);

@@ -39,8 +39,8 @@ export class PaymentRepository {
     return Booking.findById(serviceId).lean().exec();
   }
 
-  async updateBooking(serviceId: Types.ObjectId) {
-    return Booking.findByIdAndUpdate(serviceId,{ isPaid: true, transactionId: null }, { new: true }).lean().exec();
+  async updateBooking(serviceId: Types.ObjectId, paymentId: string) {
+    return Booking.findByIdAndUpdate(serviceId,{ isPaid: true, transactionId: null, paymentId }, { new: true }).lean().exec();
   }
 }
     
