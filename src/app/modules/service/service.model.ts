@@ -31,4 +31,9 @@ const serviceSchema = new Schema<IService>({
     versionKey: false
 });
 
+serviceSchema.index({ category: 1, subCategory: 1 });
+serviceSchema.index({ creator: 1 });
+serviceSchema.index({ price: 1 });
+serviceSchema.index({ createdAt: -1 });
+
 export const Service = model<IService>("Service", serviceSchema);

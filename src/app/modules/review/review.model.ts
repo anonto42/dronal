@@ -26,6 +26,14 @@ const ReviewSchema = new Schema<IReview>({
         type: Number,
         required: true
     }
+},{ 
+    timestamps: true,
+    versionKey: false
 });
+
+ReviewSchema.index({ provider: 1 });
+ReviewSchema.index({ service: 1 });
+ReviewSchema.index({ rating: 1 });
+ReviewSchema.index({ createdAt: -1 });
 
 export const Review = model<IReview>("Review", ReviewSchema);
