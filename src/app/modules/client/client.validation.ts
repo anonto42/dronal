@@ -49,6 +49,9 @@ const aProviderZodSchema = z.object({
     servicesLimit: z.coerce.number().optional().default(15),
     servicesPage: z.coerce.number().optional().default(1),
     servicesSortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+    reviewLimit: z.coerce.number().optional().default(15),
+    reviewPage: z.coerce.number().optional().default(1),
+    reviewSortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
   }).strict(),
 });
 
