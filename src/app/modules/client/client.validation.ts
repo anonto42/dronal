@@ -20,6 +20,12 @@ const getPaginationZodSchema = z.object({
     limit: z.string().optional().default("10"),
     sortBy: z.string().optional().default("createdAt"),
     sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+    category: z.string().optional(),
+    subCategory: z.string().optional(),
+    price: z.coerce.number().optional(),
+    rating: z.string().optional(),
+    distance: z.coerce.number().optional(),
+    search: z.string().optional(),
   }).strict(),
 });
 

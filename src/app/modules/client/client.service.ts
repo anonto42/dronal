@@ -12,6 +12,10 @@ import { IBooking } from '../booking/booking.interface';
 import { BOOKING_STATUS } from '../../../enums/booking';
 import { createCheckoutSession } from '../../../helpers/stripeHelper';
 import { Request } from 'express';
+import { Service } from '../service/service.model';
+import { CustomerFavorite } from '../favorites/customer.favorite.model';
+import { Review } from '../review/review.model';
+import { User } from '../user/user.model';
 
 export class ClientService {
   private userRepo: ClientRepository;
@@ -53,19 +57,175 @@ export class ClientService {
 
   }
 
-  // Need to work
-  public async getServices(user: JwtPayload, pagication: IPaginationOptions) {
-    const services = await this.userRepo.findMany({ 
-      filter: { isDeleted: false },
-      select: "-updatedAt",
-      paginationOptions: pagication,
-      populate: {
-        path: "creator",
-        select: "name image"
+  public async getServices(user: JwtPayload, pagination: IPaginationOptions) {
+    const { 
+      category,
+      subCategory,
+      price,
+      distance,
+      search,
+      rating,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      limit = 10,
+      page = 1
+    } = pagination as any;
+  
+    try {
+      const skip = (Number(page) - 1) * Number(limit);
+      const sortOption: any = { [sortBy]: sortOrder === 'desc' ? -1 : 1 };
+  
+      // Build the base query
+      let query: any = { isDeleted: { $ne: true } };
+  
+      // Handle search
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: "i" } },
+          { subCategory: { $regex: search, $options: "i" } }
+        ];
       }
-    });
-
-    return services;
+  
+      // Handle category filters
+      if (category) query.category = category;
+      if (subCategory) query.subCategory = subCategory;
+      if (price) query.price = { $lte: Number(price) };
+  
+      // Handle distance and rating filters
+      let providerIds: any[] = [];
+      
+      if (distance || rating) {
+        const userDoc = await this.userRepo.findById(new Types.ObjectId(user.id));
+        if (!userDoc) {
+          throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
+        }
+  
+        // Build provider query for distance and rating
+        const providerQuery: any = {};
+  
+        // Handle distance filter
+        if (distance && userDoc.location?.coordinates) {
+          providerQuery.location = {
+            $near: {
+              $geometry: {
+                type: "Point",
+                coordinates: userDoc.location.coordinates,
+              },
+              $maxDistance: Number(distance) * 1000,
+            },
+          };
+        }
+  
+        // Handle rating filter
+        if (rating) {
+          // Get providers with average rating >= specified rating
+          const ratedProviders = await Review.aggregate([
+            {
+              $group: {
+                _id: "$provider",
+                averageRating: { $avg: "$rating" }
+              }
+            },
+            {
+              $match: {
+                averageRating: { $gte: Number(rating) }
+              }
+            }
+          ]);
+  
+          const ratedProviderIds = ratedProviders.map(rp => rp._id);
+          
+          if (providerQuery._id) {
+            providerQuery._id.$in = providerQuery._id.$in.filter((id: any) => 
+              ratedProviderIds.includes(id.toString())
+            );
+          } else {
+            providerQuery._id = { $in: ratedProviderIds };
+          }
+        }
+  
+        // Find providers that match the criteria
+        const matchingProviders = await User.find(providerQuery).select('_id');
+        providerIds = matchingProviders.map(provider => provider._id);
+  
+        // Add provider filter to service query
+        if (providerIds.length > 0) {
+          query.creator = { $in: providerIds };
+        } else {
+          // If no providers match, return empty result
+          return {
+            data: [],
+            pagination: {
+              page: Number(page),
+              limit: Number(limit),
+              total: 0,
+              totalPages: 0
+            }
+          };
+        }
+      }
+  
+      // Get user's favorite providers once
+      const favoriteProviders = await CustomerFavorite.find({ 
+        customer: new Types.ObjectId(user.id) 
+      }).select('provider').lean();
+  
+      const favoriteProviderIds = favoriteProviders.map(fav => fav.provider.toString());
+  
+      // Execute main query
+      const [services, total] = await Promise.all([
+        Service.find(query)
+          .populate('creator', 'name image contact address location category experience')
+          .sort(sortOption)
+          .limit(Number(limit))
+          .skip(skip)
+          .lean()
+          .exec(),
+        Service.countDocuments(query)
+      ]);
+  
+      // Add review counts and favorite status
+      const servicesWithStats = await Promise.all(
+        services.map(async (service) => {
+          const reviewCount = await Review.countDocuments({ 
+            provider: service.creator?._id 
+          });
+  
+          const averageRating = await Review.aggregate([
+            { $match: { provider: service.creator?._id } },
+            { $group: { _id: null, averageRating: { $avg: "$rating" } } }
+          ]);
+  
+          const isFavorite = favoriteProviderIds.includes(service.creator?._id.toString());
+  
+          return {
+            ...service,
+            providerStats: {
+              reviewCount,
+              averageRating: averageRating.length > 0 ? 
+                Math.round(averageRating[0].averageRating * 10) / 10 : 0,
+              isFavorite
+            }
+          };
+        })
+      );
+  
+      return {
+        data: servicesWithStats,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          totalPages: Math.ceil(total / Number(limit))
+        }
+      };
+  
+    } catch (error: any) {
+      throw new ApiError(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        `Failed to fetch services: ${error.message}`
+      );
+    }
   }
 
   // Have to work on it
