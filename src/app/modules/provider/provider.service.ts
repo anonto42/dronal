@@ -165,7 +165,7 @@ export class ProviderService {
     }
   ) {
     const result = await this.providerRepo.providerServices({
-      filter: { creator: new mongoose.Types.ObjectId( payload.id ) },
+      filter: { creator: new mongoose.Types.ObjectId( payload.id ), isDeleted: false },
       paginationOptions: query,
       select:"-__v -updatedAt -creator"
     });
