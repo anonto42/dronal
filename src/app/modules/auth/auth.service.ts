@@ -1,20 +1,19 @@
-// auth.service.ts
 import { AuthRepository } from './auth.repository';
 import { JwtPayload, Secret } from 'jsonwebtoken';
 import config from '../../../config';
 import ApiError from '../../../errors/ApiError';
-import { emailHelper } from '../../../helpers/emailHelper';
 import { jwtHelper } from '../../../helpers/jwtHelper';
 import { htmlTemplate } from '../../../shared/htmlTemplate';
 import cryptoToken from '../../../util/cryptoToken';
 import generateOTP from '../../../util/generateOTP';
 import bcrypt from 'bcrypt';
 import ms, { StringValue } from "ms";
-import { ILoginData, IVerifyEmail, IAuthResetPassword, IChangePassword, ISignUp } from '../../../types/auth';
+import { ILoginData, IVerifyEmail, IAuthResetPassword, IChangePassword } from '../../../types/auth';
 import { STATUS } from '../../../enums/user';
 import { IUser } from '../user/user.interface';
 import mongoose from 'mongoose';
 import { StatusCodes } from 'http-status-codes';
+import { emailQueue } from '../../../queues/email.queue';
 
 export class AuthService {
   private authRepo: AuthRepository;
@@ -36,7 +35,9 @@ export class AuthService {
     if (existingUser) {
       const otp = generateOTP(6);
       const values = { name: existingUser.name, otp, email: existingUser.email! };
-      emailHelper.sendEmail(htmlTemplate.createAccount(values));
+
+      const data = htmlTemplate.createAccount(values);
+      await emailQueue.add("email-send", data);
 
       await this.authRepo.updateUserById(existingUser._id, {
         password: payload.password,
@@ -56,7 +57,9 @@ export class AuthService {
 
     const newUser = await this.authRepo.saveUser(payload);
     const otp = generateOTP(6);
-    emailHelper.sendEmail(htmlTemplate.createAccount({ name: newUser.name, otp, email: newUser.email! }));
+
+    const data = htmlTemplate.createAccount({ name: newUser.name, otp, email: newUser.email! });
+    await emailQueue.add("email-send", data);
 
     await this.authRepo.updateUserById(newUser._id, {
       authentication: {
@@ -154,7 +157,8 @@ export class AuthService {
     }
 
     const otp = generateOTP(6);
-    emailHelper.sendEmail(htmlTemplate.resetPassword({ otp, email: user.email }));
+    const data = htmlTemplate.resetPassword({ otp, email: user.email });
+    await emailQueue.add("email-send", data);
 
     const authentication = { oneTimeCode: otp, expireAt: new Date(Date.now() + 5 * 60000), isResetPassword: true };
     await this.authRepo.updateUserById(user._id, { authentication });
