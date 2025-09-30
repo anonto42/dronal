@@ -1,11 +1,13 @@
 import { PaymentRepository } from "./payment.repository";
-import { IPayment } from "./payment.interface";
 import ApiError from "../../../errors/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
 import { checkout } from "../../../helpers/stripeHelper";
 import { htmlTemplate } from "../../../shared/htmlTemplate";
 import { PAYMENT_STATUS } from "../../../enums/payment";
+import { emailQueue } from "../../../queues/email.queue";
+import { Notification } from "../notification/notification.model";
+import { redisDB } from "../../../redis/connectedUsers";
 
 export class PaymentService {
   private paymentRepo: PaymentRepository;
@@ -74,6 +76,31 @@ export class PaymentService {
       amount: service.price,
       paymentStatus: PAYMENT_STATUS.COMPLETED,
     })
+
+    const message = await Notification.create({
+      for: providerId,
+      message: "You have a new booking request",
+    });
+
+    await emailQueue.add("socket-notification", message, {
+      removeOnComplete: true,
+      removeOnFail: false,
+    });
+
+    const isProviderOnline = await redisDB.get(`user:${booking.provider}`);
+    if (!isProviderOnline) {
+      const provider = await this.paymentRepo.findProvider(providerId);
+      await emailQueue.add("push-notification", {
+        notification: {
+          title: "You got a new booking request",
+          body: `${customer.name} has requested a booking for ${service.category}`
+        },
+        token: provider?.fcmToken
+      }, {
+        removeOnComplete: true,
+        removeOnFail: false,
+      });
+    };
 
     return htmlTemplate.paymentSuccess();
   }
