@@ -4,6 +4,7 @@ import Database from './../DB/db';
 import { emailHelper } from "../helpers/emailHelper";
 import { io } from "socket.io-client"
 import config from "../config";
+import { messageSend } from "../helpers/fireBaseHelper";
 
 // DB Connection
 ;( async () => {
@@ -30,6 +31,10 @@ const emailWorker = new Worker(
     if(job.name === "socket-notification") {
       socket.emit("notification", job.data);
     };
+
+    if(job.name === "push-notification") {
+      await messageSend(job.data);
+    }
     
   },
   { connection: redisConfig }
