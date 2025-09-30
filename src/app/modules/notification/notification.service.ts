@@ -1,7 +1,5 @@
 import { NotificationRepository } from "./notification.repository";
 import { INotification } from "./notification.interface";
-import ApiError from "../../../errors/ApiError";
-import { StatusCodes } from "http-status-codes";
 import mongoose, { Types } from "mongoose";
 import { IPaginationOptions } from "../../../types/pagination";
 import { JwtPayload } from "jsonwebtoken";
