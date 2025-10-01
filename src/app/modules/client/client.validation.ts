@@ -106,6 +106,12 @@ const getCategoriesZodSchema = z.object({
   }).strict(),
 });
 
+const acceptBookingZodSchema = z.object({
+  params: z.object({
+    id: z.string({ required_error: "Booking id is required" }),
+  }).strict(),
+});
+
 export const ClientValidation = {
   updateUserZodSchema,
   getPaginationZodSchema,
@@ -117,4 +123,5 @@ export const ClientValidation = {
   getBookingZodSchema,
   removeBookingZodSchema,
   getCategoriesZodSchema,
+  acceptBookingZodSchema,
 };

@@ -378,6 +378,18 @@ export class ClientService {
     if (booking.bookingStatus == BOOKING_STATUS.CANCELLED) {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already cancelled");
     }
+
+    if (booking.bookingStatus == BOOKING_STATUS.ACCEPTED) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already accepted");
+    }
+
+    if (booking.bookingStatus == BOOKING_STATUS.COMPLETED) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already completed");
+    }
+
+    if (booking.bookingStatus == BOOKING_STATUS.REJECTED) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already rejected");
+    }
     
     const notification = await Notification.create({
       for: booking.provider,
@@ -485,6 +497,70 @@ export class ClientService {
     return categories;
   }
 
-  
+  public async acceptBooking (user: JwtPayload, id: string ) {
+    const booking = await this.userRepo.findBookings({ filter: { _id: new Types.ObjectId(id) },//@ts-ignore
+     populate: [{
+      path: "service",
+      select: "image price category subCategory"
+    },{ 
+      path: "provider",
+      select: "name image address category"
+    }] });
+    if (!booking.length) throw new ApiError(StatusCodes.NOT_FOUND, "Booking not found!");
+
+    if (booking[0].bookingStatus == BOOKING_STATUS.PENDING) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already pending");
+    }
+
+    if (booking[0].bookingStatus == BOOKING_STATUS.COMPLETED) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already completed");
+    }
+
+    if (booking[0].bookingStatus == BOOKING_STATUS.CANCELLED) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already cancelled");
+    }
+
+    if (booking[0].bookingStatus == BOOKING_STATUS.REJECTED) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already rejected");
+    }
+
+    await this.userRepo.updateBooking(new Types.ObjectId(id), { bookingStatus: BOOKING_STATUS.COMPLETED });
+
+    const findProvider = await this.userRepo.findById(booking[0].provider) as IUser;
+    if (!findProvider) throw new ApiError(StatusCodes.NOT_FOUND, "Provider not found!");
+
+    //@ts-ignore
+    const provider = await this.userRepo.findAndUpdateProvider(booking[0].provider, { wallet: findProvider.wallet + booking[0].service.price }) as IUser;
+    if (!provider) throw new ApiError(StatusCodes.NOT_FOUND, "Provider not found!");
+
+    
+
+    const notification = await Notification.create({
+      for: booking[0].provider,
+      message: "Your Booking accepted"
+    })
+
+    const isProviderOnline = await redisDB.get(`user:${booking[0].provider}`);
+    if (!isProviderOnline) {
+      const provider = await this.userRepo.findById(booking[0].provider) as IUser;
+      await emailQueue.add("push-notification", {
+        notification: {
+          title: "Booking Accepted",
+          body: "Your Booking accepted"
+        },
+        token: provider?.fcmToken
+      }, {
+        removeOnComplete: true,
+        removeOnFail: false,
+      });
+    };
+
+    await emailQueue.add("socket-notification", notification, {
+      removeOnComplete: true,
+      removeOnFail: false,
+    });
+
+    return ;
+  }
 
 }

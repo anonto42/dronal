@@ -195,4 +195,16 @@ export class ClientController {
     });
   });
 
+  public acceptBooking = catchAsync(async (req: Request | any, res: Response) => {
+
+    const result = await this.clientService.acceptBooking(req.user, req.params.id);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Successfully accept Booking",
+      data: result,
+    });
+  });
+
 }

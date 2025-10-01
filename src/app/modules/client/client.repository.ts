@@ -176,4 +176,8 @@ export class ClientRepository {
     const { page=1, limit=10, sortBy="createdAt", sortOrder="desc" } = query;
     return Category.find().select("-createdAt -updatedAt -__v -isDeleted").lean().skip((page - 1) * limit).limit(limit).sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 }).exec();
   }
+
+  async findAndUpdateProvider(id: Types.ObjectId, payload: Partial<IUser>) {
+    return User.findByIdAndUpdate(id, payload, { new: true }).lean().exec();
+  }
 }

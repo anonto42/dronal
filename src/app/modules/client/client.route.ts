@@ -121,6 +121,15 @@ export class ClientRoutes {
 
     this
     .router
+    .route("/book/accept/:id")
+    .post(
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      validateRequest(ClientValidation.acceptBookingZodSchema),
+      this.clientController.acceptBooking
+    )
+
+    this
+    .router
     .route("/categories")
     .get(
       auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
