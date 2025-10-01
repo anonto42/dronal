@@ -93,4 +93,48 @@ export class AdminController {
       data: result,
     });
   });
+
+  public getPolicy = catchAsync(async (req: Request, res: Response) => {
+    const result = await this.adminService.getPolicy();
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Policy retrieved successfully",
+      data: result,
+    });
+  });
+
+  public updatePolicy = catchAsync(async (req: Request, res: Response) => {
+    const result = await this.adminService.upsertPolicy(req.body);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Policy updated successfully",
+      data: result,
+    });
+  });
+
+  public getTerms = catchAsync(async (req: Request, res: Response) => {
+    const result = await this.adminService.getTerms();
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Terms retrieved successfully",
+      data: result,
+    });
+  });
+
+  public updateTerms = catchAsync(async (req: Request, res: Response) => {
+    const result = await this.adminService.upsertTerms(req.body);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Terms updated successfully",
+      data: result,
+    });
+  });
 }

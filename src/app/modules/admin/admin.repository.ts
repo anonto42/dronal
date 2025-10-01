@@ -10,6 +10,8 @@ import { IVerificaiton } from "../verification/verification.interface";
 import { Verification } from "../verification/verification.model";
 import { ICategory } from "../category/category.interface";
 import { Category } from "../category/category.model";
+import { ITermsAndPolicy } from "../terms&policy/terms&policy.interface";
+import { TermsModel } from "../terms&policy/terms&policy.model";
 
 export class AdminRepository {
   
@@ -67,4 +69,49 @@ export class AdminRepository {
   async deleteCategory(id: Types.ObjectId): Promise<ICategory | null> {
     return Category.findByIdAndUpdate(id, { isDeleted: true }, { new: true }).lean().exec();
   }
+
+  async addNewPolicy(policy: ITermsAndPolicy): Promise<ITermsAndPolicy> {
+    return TermsModel.create({ type: "policy", content: policy.content });
+  }
+  
+  async getPolicy(): Promise<ITermsAndPolicy | null> {
+    return TermsModel.findOne({ type: "policy" })
+      .select("content -_id")
+      .lean()
+      .exec();
+  }
+  
+  async updatePolicy(policy: ITermsAndPolicy): Promise<ITermsAndPolicy | null> {
+    return TermsModel.findOneAndUpdate(
+      { type: "policy" },
+      { content: policy.content },
+      { new: true }
+    )
+      .select("content")
+      .lean()
+      .exec();
+  }
+  
+  async addNewTerms(terms: ITermsAndPolicy): Promise<ITermsAndPolicy> {
+    return TermsModel.create({ type: "terms", content: terms.content });
+  }
+  
+  async getTerms(): Promise<ITermsAndPolicy | null> {
+    return TermsModel.findOne({ type: "terms" })
+      .select("content -_id")
+      .lean()
+      .exec();
+  }
+  
+  async updateTerms(terms: ITermsAndPolicy): Promise<ITermsAndPolicy | null> {
+    return TermsModel.findOneAndUpdate(
+      { type: "terms" },
+      { content: terms.content },
+      { new: true }
+    )
+      .select("content")
+      .lean()
+      .exec();
+  }
+  
 }

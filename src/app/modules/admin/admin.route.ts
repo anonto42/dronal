@@ -71,6 +71,31 @@ export class AdminRoutes {
         this.adminController.deleteCategory
       );
       
+    this
+    .router
+    .route("/policy")
+    .get(
+      auth( USER_ROLES.ADMIN, USER_ROLES.CLIENT, USER_ROLES.PROVIDER ),
+      this.adminController.getPolicy
+    )
+    .patch(
+      auth( USER_ROLES.ADMIN ),
+      validateRequest(AdminValidation.updatePolicySchema),
+      this.adminController.updatePolicy
+    );
+
+    this
+    .router
+    .route("/terms")
+    .get(
+      auth( USER_ROLES.ADMIN, USER_ROLES.CLIENT, USER_ROLES.PROVIDER ),
+      this.adminController.getTerms
+    )
+    .patch(
+      auth( USER_ROLES.ADMIN ),
+      validateRequest(AdminValidation.updateTermsSchema),
+      this.adminController.updateTerms
+    );
 
   }
 }

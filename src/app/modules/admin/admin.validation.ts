@@ -41,10 +41,24 @@ const updateCategorySchema = z.object({
   }).strict()
 });
 
+const updatePolicySchema = z.object({
+  body: z.object({
+    content: z.string({ invalid_type_error: "Policy content is required" }).optional(),
+  }).strict()
+});
+
+const updateTermsSchema = z.object({
+  body: z.object({
+    content: z.string({ invalid_type_error: "Terms content is required" }).optional(),
+  }).strict()
+});
+
 export const AdminValidation = {
   usersAdminSchema,
   idParamsAdminSchema,
   addNewCategorySchema,
   getCategoriesSchema,
   updateCategorySchema,
+  updatePolicySchema,
+  updateTermsSchema,
 };

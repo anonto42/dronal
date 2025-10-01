@@ -6,6 +6,7 @@ import { IPaginationOptions } from "../../../types/pagination";
 import { USER_ROLES, VERIFICATION_STATUS } from "../../../enums/user";
 import { BOOKING_STATUS } from "../../../enums/booking";
 import { ICategory } from "../category/category.interface";
+import { ITermsAndPolicy } from "../terms&policy/terms&policy.interface";
 
 export class AdminService {
   private adminRepo: AdminRepository;
@@ -132,5 +133,44 @@ export class AdminService {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Category not found");
     }
     return result;
+  }
+  
+  public async getTerms() {
+    return await this.adminRepo.getTerms();
+  }
+
+  public async getPolicy() {
+    return await this.adminRepo.getPolicy();
+  }
+
+  public async upsertPolicy(policy: Partial<ITermsAndPolicy>) {
+    // Try to find existing policy
+    const existing = await this.adminRepo.getPolicy();
+  
+    if (!existing) {
+      // Create new one if not exists
+      return await this.adminRepo.addNewPolicy(policy as ITermsAndPolicy);
+    }
+  
+    // Update existing one
+    return await this.adminRepo.updatePolicy({
+      content: policy.content ?? existing.content,
+    } as ITermsAndPolicy);
+  }
+  
+  public async upsertTerms(terms: Partial<ITermsAndPolicy>) {
+    // Try to find existing terms
+    const existing = await this.adminRepo.getTerms();
+  
+    if (!existing) {
+      // Create new one if not exists
+      return await this.adminRepo.addNewTerms(terms as ITermsAndPolicy);
+    }
+  
+    // Update existing one
+    return await this.adminRepo.updateTerms({
+      _id: existing._id,
+      content: terms.content ?? existing.content,
+    } as ITermsAndPolicy);
   }
 }
