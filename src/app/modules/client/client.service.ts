@@ -19,6 +19,7 @@ import { User } from '../user/user.model';
 import { Notification } from '../notification/notification.model';
 import { emailQueue } from '../../../queues/email.queue';
 import { redisDB } from '../../../redis/connectedUsers';
+import { PAYMENT_STATUS } from '../../../enums/payment';
 
 export class ClientService {
   private userRepo: ClientRepository;
@@ -390,6 +391,11 @@ export class ClientService {
     if (booking.bookingStatus == BOOKING_STATUS.REJECTED) {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already rejected");
     }
+
+    await this.userRepo.updatePayment({
+      filter: { booking: new Types.ObjectId(booking._id) },
+      payload: { paymentStatus: PAYMENT_STATUS.REFUNDED }
+    });
     
     const notification = await Notification.create({
       for: booking.provider,
@@ -525,6 +531,11 @@ export class ClientService {
     }
 
     await this.userRepo.updateBooking(new Types.ObjectId(id), { bookingStatus: BOOKING_STATUS.COMPLETED });
+    
+    await this.userRepo.updatePayment({
+      filter: { booking: new Types.ObjectId(id) },
+      payload: { paymentStatus: PAYMENT_STATUS.PAYED }
+    });
 
     const findProvider = await this.userRepo.findById(booking[0].provider) as IUser;
     if (!findProvider) throw new ApiError(StatusCodes.NOT_FOUND, "Provider not found!");
@@ -533,7 +544,7 @@ export class ClientService {
     const provider = await this.userRepo.findAndUpdateProvider(booking[0].provider, { wallet: findProvider.wallet + booking[0].service.price }) as IUser;
     if (!provider) throw new ApiError(StatusCodes.NOT_FOUND, "Provider not found!");
 
-    
+
 
     const notification = await Notification.create({
       for: booking[0].provider,
