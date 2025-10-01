@@ -437,4 +437,68 @@ export class ProviderService {
     return customer
   }
 
+  public async cancelBooking (user: JwtPayload, id: string ) {
+    const booking = await this.providerRepo.findBookings({ filter: { _id: new mongoose.Types.ObjectId(id) } });
+    if (!booking.length) throw new ApiError(StatusCodes.NOT_FOUND, "Booking not found!");
+
+    if (booking[0].bookingStatus == BOOKING_STATUS.PENDING) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already pending");
+    }
+    
+    if (booking[0].bookingStatus == BOOKING_STATUS.COMPLETED) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already completed");
+    }
+
+    if (booking[0].bookingStatus == BOOKING_STATUS.CANCELLED) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already cancelled");
+    }
+
+    if (booking[0].bookingStatus == BOOKING_STATUS.REJECTED) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already rejected");
+    }
+    await this.providerRepo.updateBooking(new mongoose.Types.ObjectId(id), { bookingStatus: BOOKING_STATUS.CANCELLED });
+    
+    const findProvider = await this.providerRepo.findById(booking[0].provider) as IUser;
+    if (!findProvider) throw new ApiError(StatusCodes.NOT_FOUND, "Provider not found!");
+
+
+    //@ts-ignore five percent for the cancalation fee
+    const providerWallet = findProvider.wallet - (booking[0].service.price * 0.05);
+
+    const provider = await this.providerRepo.update(booking[0].provider, { wallet: providerWallet }) as IUser;
+    if (!provider) throw new ApiError(StatusCodes.NOT_FOUND, "Provider not found!");
+
+    const notification = await Notification.create({
+      for: booking[0].customer,
+      message: "Your Booking cancelled"
+    })
+
+    const isCustomerOnline = await redisDB.get(`user:${booking[0].customer}`);
+    if (!isCustomerOnline) {
+      const customer = await this.providerRepo.findById(booking[0].customer) as IUser;
+      await emailQueue.add("push-notification", {
+        notification: {
+          title: "Booking Cancelled",
+          body: "Your Booking cancelled"
+        },
+        token: customer?.fcmToken
+      }, {
+        removeOnComplete: true,
+        removeOnFail: false,
+      });
+    }
+
+    await emailQueue.add("socket-notification", notification, {
+      removeOnComplete: true,
+      removeOnFail: false,
+    })
+
+    return provider.wallet;
+  }
+
+  public async wallet (user: JwtPayload, query: IPaginationOptions) {
+    
+    
+  }
+
 }
