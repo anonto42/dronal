@@ -37,6 +37,9 @@ export type IUser = {
   startTime: string,
   endTime: string
 
+  // Stripe
+  stripeAccountId: string;
+
   // Auth
   status: STATUS;
   verified: boolean;

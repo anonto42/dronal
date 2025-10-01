@@ -128,6 +128,12 @@ const userSchema = new Schema<IUser, UserModal>(
         default: ""
     },
 
+    // Stripe
+    stripeAccountId:{
+      type: String,
+      default: ""
+    },
+
     // Basic auth
     status: {
       type: String,
