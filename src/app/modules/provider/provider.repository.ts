@@ -12,6 +12,8 @@ import { STATUS, USER_ROLES } from "../../../enums/user";
 import { IBooking } from "../booking/booking.interface";
 import { Booking } from "../booking/booking.model";
 import { Category } from "../category/category.model";
+import { IPayment } from "../payment/payment.interface";
+import { Payment } from "../payment/payment.model";
 
 export class ProviderRepository {
 
@@ -151,4 +153,45 @@ export class ProviderRepository {
   async getAdmins(){
     return User.find({ role: USER_ROLES.ADMIN }).select("name _id email").lean().exec();
   }
+
+  async wallet({
+    filter,
+    select,
+    populate,
+    paginationOptions
+  } : { 
+    filter: Partial<IPayment>; 
+    select?: string; 
+    populate?: PopulateOptions; 
+    paginationOptions?: IPaginationOptions 
+  }): Promise<IPayment[] | []> {
+    let query = Payment.find(filter);
+
+    // Only populate if defined
+    if (populate) {
+      query = query.populate(populate);
+    }
+
+    // Only select if defined
+    if (select) {
+      query = query.select(select);
+    }
+
+    // Apply pagination if provided
+    if (paginationOptions) {
+      const { skip, limit, sortBy, sortOrder } = paginationHelper.calculatePagination(paginationOptions);
+
+      query = query
+        .skip(skip)
+        .limit(limit)
+        .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 });
+    }
+
+    return query.lean().exec();
+  }
+
+  async createPayment(data: Partial<IPayment>){
+    return Payment.create(data)
+  }
+
 }

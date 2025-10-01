@@ -1,7 +1,7 @@
 import { ProviderRepository } from "./provider.repository";
 import ApiError from "../../../errors/ApiError";
 import { StatusCodes } from "http-status-codes";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { JwtPayload } from "jsonwebtoken";
 import { IUser } from "../user/user.interface";
 import unlinkFile from "../../../shared/unlinkFile";
@@ -14,6 +14,7 @@ import { Notification } from "../notification/notification.model";
 import { emailQueue } from "../../../queues/email.queue";
 import { BOOKING_STATUS } from "../../../enums/booking";
 import { redisDB } from "../../../redis/connectedUsers";
+import { PAYMENT_STATUS } from "../../../enums/payment";
 
 export class ProviderService {
   private providerRepo: ProviderRepository;
@@ -468,6 +469,15 @@ export class ProviderService {
     const provider = await this.providerRepo.update(booking[0].provider, { wallet: providerWallet }) as IUser;
     if (!provider) throw new ApiError(StatusCodes.NOT_FOUND, "Provider not found!");
 
+    await this.providerRepo.createPayment({
+      booking: booking[0]._id,
+      provider: booking[0].provider,
+      customer: booking[0].customer,
+      service: booking[0].service,// @ts-ignore
+      amount: booking[0].service.price * 0.05,
+      paymentStatus: PAYMENT_STATUS.PROVIDER_CANCELLED
+    })
+
     const notification = await Notification.create({
       for: booking[0].customer,
       message: "Your Booking cancelled"
@@ -497,8 +507,30 @@ export class ProviderService {
   }
 
   public async wallet (user: JwtPayload, query: IPaginationOptions) {
+    const provider = await this.providerRepo.findById(user.id) as IUser
     
+    const wallet = await this.providerRepo.wallet({
+      filter: { 
+        provider: new Types.ObjectId (user.id),// @ts-ignore
+        $or: [
+          { paymentStatus: PAYMENT_STATUS.PAYED },
+          { paymentStatus: PAYMENT_STATUS.PROVIDER_CANCELLED }
+        ] 
+      },
+      paginationOptions: query,
+      select: "service amount paymentStatus",//@ts-ignore
+      populate: [
+        {
+          path: "service",
+          select: "image category subCategory"  
+        }
+      ]
+    });
     
+    return {
+      balance: provider.wallet,
+      history: wallet
+    };
   }
 
 }
