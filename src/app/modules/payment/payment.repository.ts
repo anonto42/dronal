@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 import { Service } from "../service/service.model";
 import { User } from "../user/user.model";
 import { Booking } from "../booking/booking.model";
-import { BOOKING_STATUS } from "../../../enums/booking";
+import { IUser } from "../user/user.interface";
 
 export class PaymentRepository {
   async findById(id: Types.ObjectId) {
@@ -41,6 +41,10 @@ export class PaymentRepository {
 
   async updateBooking(serviceId: Types.ObjectId, paymentId: string) {
     return Booking.findByIdAndUpdate(serviceId,{ isPaid: true, transactionId: null, paymentId }, { new: true }).lean().exec();
+  }
+
+  async updateProvider(providerId: Types.ObjectId, payload: Partial<IUser>) {
+    return User.findByIdAndUpdate(providerId, payload, { new: true }).lean().exec();
   }
 }
     

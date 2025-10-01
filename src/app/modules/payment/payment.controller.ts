@@ -25,5 +25,30 @@ export class PaymentController {
 
     res.send(result);
   });
-  
+
+  public createConnectedAccount = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await this.paymentService.createConnectedAccount(req);
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Connected account created successfully",
+      data: result
+    });
+  });
+
+  public successAccount = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await this.paymentService.successAccount(req);
+
+    res.send(result);
+  });
+
+  public refreshAccount = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await this.paymentService.refreshAccount(req);
+
+    res.send(result);
+  });
 }

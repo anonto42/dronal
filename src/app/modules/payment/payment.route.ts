@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { PaymentController } from "./payment.controller";
-import { PaymentValidation } from "./payment.validation";
-import validateRequest from "../../middlewares/validateRequest";
+import { USER_ROLES } from "../../../enums/user";
+import auth from "../../middlewares/auth";
 
 export class PaymentRoutes {
   public router: Router;
@@ -15,16 +15,41 @@ export class PaymentRoutes {
 
   private initializeRoutes(): void {
 
-    this.router
+    this
+      .router
       .route("/success")
       .get(
         this.paymentController.success
       );
 
-    this.router
-      .route("/cancel")
-      // .get(this.paymentController.cancel);
+    this
+      .router
+      .route("/account/:id")
+      .get(
+        this.paymentController.successAccount
+      );
 
+    this
+      .router
+      .route("/account/refresh/:id")
+      .get(
+        this.paymentController.refreshAccount
+      );
+
+    this
+      .router
+      .route("/cancel")
+      .get(
+        this.paymentController.failure
+      )
+
+    this
+      .router
+      .route("/connected-account")
+      .get(
+        auth(USER_ROLES.PROVIDER),
+        this.paymentController.createConnectedAccount
+      );
   }
 }
 

@@ -2,12 +2,13 @@ import { PaymentRepository } from "./payment.repository";
 import ApiError from "../../../errors/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
-import { checkout } from "../../../helpers/stripeHelper";
+import { accountLinks, accounts, checkout } from "../../../helpers/stripeHelper";
 import { htmlTemplate } from "../../../shared/htmlTemplate";
 import { PAYMENT_STATUS } from "../../../enums/payment";
 import { emailQueue } from "../../../queues/email.queue";
 import { Notification } from "../notification/notification.model";
 import { redisDB } from "../../../redis/connectedUsers";
+import { Request } from "express";
 
 export class PaymentService {
   private paymentRepo: PaymentRepository;
@@ -104,6 +105,79 @@ export class PaymentService {
     };
 
     return htmlTemplate.paymentSuccess();
+  }
+
+  public async createConnectedAccount(req: Request) {
+    const host = req.headers.host;
+    const protocol = req.headers.protocol;
+
+    const user = req.user;
+    const userOnDB = await this.paymentRepo.findProvider(user.id);
+    if (!userOnDB) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "User not found");
+    }
+    
+    const account = await accounts.create({
+      type: "express",
+      email: userOnDB.email,
+      country: userOnDB.nationality,
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true }
+      },
+      metadata: {
+        userId: user.id
+      }
+    });
+
+    const onboardLink = await accountLinks.create({
+      account: account.id,
+      refresh_url: `${protocol}://${host}/api/v1/payment/account/refresh/${account.id}`,
+      return_url: `${protocol}://${host}/api/v1/payment/account/${account.id}`,
+      type: "account_onboarding"
+    });
+
+    return onboardLink.url;
+  }
+
+  public async refreshAccount(req: Request) {
+    const { id } = req.params;
+    if (!id) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Account ID is required");
+    }
+    
+    const host = req.headers.host as string;
+    const protocol = req.protocol as string;
+    
+    const onboardLink = await accountLinks.create({
+      account: id,
+      refresh_url: `${protocol}://${host}/api/v1/payment/account/refresh/${id}`,
+      return_url: `${protocol}://${host}/api/v1/payment/account/${id}`,
+      type: "account_onboarding"
+    });
+
+    return htmlTemplate.reconnectUrl(onboardLink.url)
+  }
+
+  public async successAccount(req: Request) {
+    const { id } = req.params;
+    if (!id) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Account ID is required");
+    }
+    
+    const account = await accounts.retrieve(id);
+    if (!account) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Account not found");
+    }
+
+    const user = await this.paymentRepo.findProvider(new Types.ObjectId(account?.metadata?.userId));
+    if (!user) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "User not found");
+    }
+    
+    await this.paymentRepo.updateProvider(user._id, { stripeAccountId: account.id });
+
+    return htmlTemplate.accountbindSuccessfull();
   }
 
 }
