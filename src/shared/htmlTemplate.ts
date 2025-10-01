@@ -257,7 +257,6 @@ export class HTMLTemplate {
   <div class="message-box">
     <h1>Payment Successful!</h1>
     <p>Your transaction has been completed successfully.</p>
-    <a class="btn" href="/">Go Home</a>
   </div>
 </body>
 </html>`
