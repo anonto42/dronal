@@ -374,6 +374,10 @@ export class ClientService {
   public async cancelBooking (user: JwtPayload, id: Types.ObjectId) {
     const booking = await this.userRepo.cancelBooking(id);
     if (!booking) throw new ApiError(StatusCodes.NOT_FOUND, "Booking not found!");
+
+    if (booking.bookingStatus == BOOKING_STATUS.CANCELLED) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Booking already cancelled");
+    }
     
     const notification = await Notification.create({
       for: booking.provider,
@@ -480,5 +484,7 @@ export class ClientService {
 
     return categories;
   }
+
+  
 
 }
