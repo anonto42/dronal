@@ -15,6 +15,8 @@ import { IBooking } from '../booking/booking.interface';
 import { Booking } from '../booking/booking.model';
 import { BOOKING_STATUS } from '../../../enums/booking';
 import { Category } from '../category/category.model';
+import { IPayment } from './../payment/payment.interface';
+import { Payment } from '../payment/payment.model';
 
 export class ClientRepository {
 
@@ -179,5 +181,15 @@ export class ClientRepository {
 
   async findAndUpdateProvider(id: Types.ObjectId, payload: Partial<IUser>) {
     return User.findByIdAndUpdate(id, payload, { new: true }).lean().exec();
+  }
+
+  async updatePayment({
+    filter,
+    payload
+  }: {
+    filter: Partial<IPayment>;
+    payload: Partial<IPayment>;
+  }) {
+    return Payment.findOneAndUpdate(filter, payload, { new: true }).lean().exec();
   }
 }
