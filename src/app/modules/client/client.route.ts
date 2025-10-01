@@ -137,6 +137,15 @@ export class ClientRoutes {
       this.clientController.getCategories
     )
 
+    this
+    .router
+    .route("/review/:id")
+    .post(
+      auth(USER_ROLES.CLIENT, USER_ROLES.ADMIN),
+      validateRequest(ClientValidation.giveReviewSchema),
+      this.clientController.giveReview
+    )
+
   }
 }
 

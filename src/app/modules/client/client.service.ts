@@ -213,16 +213,26 @@ export class ClientService {
           };
         })
       );
+
+      const formetedData = servicesWithStats.map(service => {
+        return {
+          service:{
+            image: service.image,
+            category: service.category,
+            price: service.price,
+            subCategory: service.subCategory
+          },
+          provider: {//@ts-ignore
+            image: service.creator?.image,//@ts-ignore
+            name: service.creator?.name,
+            reviewCount: service.providerStats.reviewCount,
+            averageRating: service.providerStats.averageRating,
+            isFavorite: service.providerStats.isFavorite
+          }
+        };
+      });
   
-      return {
-        data: servicesWithStats,
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total,
-          totalPages: Math.ceil(total / Number(limit))
-        }
-      };
+      return formetedData;
   
     } catch (error: any) {
       throw new ApiError(
@@ -232,8 +242,8 @@ export class ClientService {
     }
   }
 
+  // Have to work on the reviews
   public async getProviderById(user: JwtPayload, id: Types.ObjectId, query: TServicePagination) {
-
 
     const provider = await this.userRepo.findById(id);
     if (!provider) throw new ApiError(StatusCodes.NOT_FOUND, "Provider not found!");
@@ -248,16 +258,19 @@ export class ClientService {
       },
       populate: {
         path: "creator",
-        select: "name image"
+        select: "name image category"
       }
     });
 
     const completedTask = await this.userRepo.findBookings({ filter: { provider: provider._id, bookingStatus: BOOKING_STATUS.COMPLETED } });
 
-    const reviews = await this.userRepo.getReviews({ provider: provider._id },"-updatedAt",{
-      limit: query.reviewLimit,
-      page: query.reviewPage,
-      sortOrder: query.reviewSortOrder
+    const reviews = await this.userRepo.getReviews({
+      filter: { provider: provider._id },
+      select: "-updatedAt -__v -provider -service",
+      populate: {
+        path: "creator",
+        select: "name image"
+      }
     });
 
     let averageRating = 0;
@@ -274,10 +287,24 @@ export class ClientService {
     return {
       isFavorite: isFavorite?.length > 0,
       services,
-      reviews,
+      reviews:{
+        overview: {
+          averageRating,
+          totalReviews: reviews.length,
+          start:{
+            oneStar: reviews.filter(r => r.rating === 1).length,
+            twoStar: reviews.filter(r => r.rating === 2).length,
+            threeStar: reviews.filter(r => r.rating === 3).length,
+            fourStar: reviews.filter(r => r.rating === 4).length,
+            fiveStar: reviews.filter(r => r.rating === 5).length,
+          }
+        },
+        all: reviews,
+      },
       provider:{
         name: provider.name,
         image: provider.image,
+        category: provider.category,
         experience: provider.experience,
         complitedTask: completedTask?.length ?? 0,
         rating: averageRating,
@@ -572,6 +599,30 @@ export class ClientService {
     });
 
     return ;
+  }
+
+  public async giveReview (user: JwtPayload, id: string, data: { feedback: string, rating: number }) {
+
+    const booking = await this.userRepo.findBookings({ filter: { _id: new Types.ObjectId(id) },//@ts-ignore
+     populate: [{
+      path: "service",
+      select: "image price category subCategory"
+    },{ 
+      path: "provider",
+      select: "name image address category"
+    }] });
+    if (!booking.length) throw new ApiError(StatusCodes.NOT_FOUND, "Booking not found!");
+
+    const review = await this.userRepo.giveReview({
+      creator: new Types.ObjectId(user.id!),
+      provider: booking[0].provider,
+      review: data.feedback,
+      rating: data.rating,
+      service: booking[0].service
+    });
+    if (!review) throw new ApiError(StatusCodes.NOT_FOUND, "Review not created!");
+
+    return review;
   }
 
 }

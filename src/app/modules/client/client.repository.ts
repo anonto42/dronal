@@ -98,13 +98,28 @@ export class ClientRepository {
     return CustomerFavorite.find(query).populate("provider",select?? "").select("provider").lean().exec();
   }
 
-  async getReviews(filter: Partial<IReview>,select?: string,paginationOptions?: IPaginationOptions) {
+  async getReviews({
+    filter,
+    select,
+    populate,
+    paginationOptions
+  }: {
+    filter: Partial<IReview>;
+    select?: string;
+    populate?: PopulateOptions;
+    paginationOptions?: IPaginationOptions;
+  }) {
     
     let query = Review.find(filter);
     
     // Only select if defined
     if (select) {
       query = query.select(select);
+    }
+    
+    // Only populate if defined
+    if (populate) {
+      query = query.populate(populate);
     }
     
     // Apply pagination if provided
@@ -191,5 +206,9 @@ export class ClientRepository {
     payload: Partial<IPayment>;
   }) {
     return Payment.findOneAndUpdate(filter, payload, { new: true }).lean().exec();
+  }
+
+  async giveReview(payload: Partial<IReview>) {
+    return Review.create(payload);
   }
 }

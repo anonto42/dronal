@@ -207,4 +207,16 @@ export class ClientController {
     });
   });
 
+  public giveReview = catchAsync(async (req: Request | any, res: Response) => {
+
+    const result = await this.clientService.giveReview(req.user, req.params.id, req.body);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Successfully give Review",
+      data: result,
+    });
+  });
+
 }

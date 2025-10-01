@@ -112,6 +112,16 @@ const acceptBookingZodSchema = z.object({
   }).strict(),
 });
 
+const giveReviewSchema = z.object({
+  params: z.object({
+    id: z.string({ required_error: "Booking id is required" }),
+  }).strict(),
+  body: z.object({
+    rating: z.coerce.number({ required_error: "Rating is required" }),
+    feedback: z.string({ required_error: "Review is required" }),
+  }).strict(),
+});
+
 export const ClientValidation = {
   updateUserZodSchema,
   getPaginationZodSchema,
@@ -124,4 +134,5 @@ export const ClientValidation = {
   removeBookingZodSchema,
   getCategoriesZodSchema,
   acceptBookingZodSchema,
+  giveReviewSchema,
 };
