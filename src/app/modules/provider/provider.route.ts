@@ -120,6 +120,24 @@ export class ProviderRoutes {
       this.providerController.getCustomer
     )
 
+    this
+    .router
+    .route("/book/cancel/:id")
+    .post(
+      auth(USER_ROLES.PROVIDER),
+      validateRequest(ProviderValidation.viewServiceSchema),
+      this.providerController.cancelBooking
+    )
+
+    this
+    .router
+    .route("/wallet")
+    .get(
+      auth(USER_ROLES.PROVIDER),
+      validateRequest(ProviderValidation.getPaginationZodSchema),
+      this.providerController.wallet
+    ) 
+
   }
 }
  

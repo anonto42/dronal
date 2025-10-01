@@ -152,18 +152,6 @@ export class ProviderController {
     });
   });
 
-  public cancelBooking = catchAsync(async (req: Request | any, res: Response) => {
-
-    // const result = await this.clientService.cancelBooking(req.user, req.params.id);
-
-    // sendResponse(res, {
-    //   success: true,
-    //   statusCode: StatusCodes.OK,
-    //   message: "Successfully cancel Booking",
-    //   data: result,
-    // });
-  });
-
   public getBookings = catchAsync(async (req: Request | any, res: Response) => {
 
     const result = await this.providerService.getBookings(req.user, req.query, req.body);
@@ -220,6 +208,30 @@ export class ProviderController {
       success: true,
       statusCode: StatusCodes.OK,
       message: "Customer retrieved successfully",
+      data: result,
+    });
+  });
+
+  public cancelBooking = catchAsync(async (req: Request | any, res: Response) => {
+
+    const result = await this.providerService.cancelBooking(req.user, req.params.id);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Booking cancelled successfully",
+      data: result,
+    });
+  });
+
+  public wallet = catchAsync(async (req: Request | any, res: Response) => {
+
+    const result = await this.providerService.wallet(req.user, req.query);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Wallet retrieved successfully",
       data: result,
     });
   });
