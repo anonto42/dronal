@@ -84,6 +84,12 @@ const getCategoriesSchema = z.object({
   }).strict(),
 });
 
+const whitdrawalSchema = z.object({
+  body: z.object({
+    amount: z.coerce.number({ required_error: "Amount is required" }),
+  }).strict(),
+});
+
 export const ProviderValidation = {
   updateProviderProfileSchema,
   createServiceSchema,
@@ -92,5 +98,6 @@ export const ProviderValidation = {
   viewServiceSchema,
   getPaginationZodSchema,
   bookingsActionZodSchema,
-  getCategoriesSchema
+  getCategoriesSchema,
+  whitdrawalSchema
 };
