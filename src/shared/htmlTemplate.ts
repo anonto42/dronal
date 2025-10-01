@@ -508,9 +508,6 @@ export class HTMLTemplate {
             <p>Your account has been successfully bound to our platform. You're now ready to start processing payments and managing your account with Stripe.</p>
             <p>If you need further assistance, please reach out to our support team. Otherwise, you can continue by clicking the button below.</p>
         </div>
-        <div class="button-container">
-            <a href="<%= nextStepUrl %>" class="next-step-btn" target="_blank">Proceed to Dashboard</a>
-        </div>
     </div>
 </body>
 
