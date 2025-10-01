@@ -15,12 +15,17 @@ import { emailQueue } from "../../../queues/email.queue";
 import { BOOKING_STATUS } from "../../../enums/booking";
 import { redisDB } from "../../../redis/connectedUsers";
 import { PAYMENT_STATUS } from "../../../enums/payment";
+import { transfers } from "../../../helpers/stripeHelper";
+import { PaymentService } from "../payment/payment.service";
+import { Request } from "express";
 
 export class ProviderService {
   private providerRepo: ProviderRepository;
+  private paymentService: PaymentService;
 
   constructor() {
     this.providerRepo = new ProviderRepository();
+    this.paymentService = new PaymentService();
   }
 
   public async profile(
@@ -531,6 +536,34 @@ export class ProviderService {
       balance: provider.wallet,
       history: wallet
     };
+  }
+
+  public async whitdrawal (user: JwtPayload, data: { amount: number },req: Request) {
+    const provider = await this.providerRepo.findById(user.id) as IUser;
+    if (!provider) throw new ApiError(StatusCodes.NOT_FOUND, "Provider not found!");
+    
+    if (provider.wallet < data.amount) throw new ApiError(StatusCodes.BAD_REQUEST, "Insufficient balance!");
+    
+    if (!provider.stripeAccountId) {
+      
+      return {
+        message: "Please connect your account with stripe to withdraw money",
+        url: await this.paymentService.createConnectedAccount(req)
+      };
+    }
+
+    const amountAfterFee = data.amount - (data.amount * 0.05);
+
+    await transfers.create({
+      amount: amountAfterFee * 100,
+      currency: 'usd',
+      destination: provider.stripeAccountId,
+      transfer_group: `provider_${provider._id}`
+    });
+
+    await this.providerRepo.update(provider._id, { wallet: provider.wallet - data.amount });
+
+    return;
   }
 
 }

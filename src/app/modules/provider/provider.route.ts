@@ -132,6 +132,11 @@ export class ProviderRoutes {
     this
     .router
     .route("/wallet")
+    .post(
+      auth(USER_ROLES.PROVIDER),
+      validateRequest(ProviderValidation.whitdrawalSchema),
+      this.providerController.whitdrawal
+    )
     .get(
       auth(USER_ROLES.PROVIDER),
       validateRequest(ProviderValidation.getPaginationZodSchema),

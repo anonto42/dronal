@@ -236,4 +236,15 @@ export class ProviderController {
     });
   });
 
+  public whitdrawal = catchAsync(async (req: Request | any, res: Response) => {
+
+    const result = await this.providerService.whitdrawal(req.user, req.body, req);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Wallet retrieved successfully",
+      data: result,
+    });
+  });
 }
