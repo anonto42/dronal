@@ -109,7 +109,7 @@ export class PaymentService {
 
   public async createConnectedAccount(req: Request) {
     const host = req.headers.host;
-    const protocol = req.headers.protocol;
+    const protocol = req.protocol;
 
     const user = req.user;
     const userOnDB = await this.paymentRepo.findProvider(user.id);
@@ -120,7 +120,6 @@ export class PaymentService {
     const account = await accounts.create({
       type: "express",
       email: userOnDB.email,
-      country: userOnDB.nationality,
       capabilities: {
         card_payments: { requested: true },
         transfers: { requested: true }
