@@ -563,6 +563,15 @@ export class ProviderService {
 
     await this.providerRepo.update(provider._id, { wallet: provider.wallet - data.amount });
 
+    await this.providerRepo.createPayment({// @ts-ignore
+      booking: null,// @ts-ignore
+      provider: provider._id,// @ts-ignore
+      customer: null,// @ts-ignore
+      service: null,// @ts-ignore
+      amount: -data.amount,
+      paymentStatus: PAYMENT_STATUS.PROVIDER_CANCELLED
+    })  
+
     return;
   }
 
