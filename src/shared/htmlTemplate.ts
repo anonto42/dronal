@@ -417,7 +417,7 @@ export class HTMLTemplate {
   }
 
   /**
-   * 
+   * Stripe account bind successfull
    */
   public accountbindSuccessfull(): string {
     return `
@@ -510,6 +510,44 @@ export class HTMLTemplate {
     </div>
 </body>
 
+</html>
+`
+  }
+
+  /** 
+   * Support account created successfully
+   */
+  public supportGived(): string {
+    return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Problem Solved</title>
+</head>
+<body style="margin:0; padding:0; background:#f4f4f4; font-family:Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td align="center" style="padding:20px 0;">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:8px; overflow:hidden;">
+          <tr>
+            <td style="padding:20px; text-align:center; background:#0b76d1; color:#ffffff; font-size:20px; font-weight:bold;">
+              Problem Solved ✅
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:30px; font-size:16px; color:#333333;">
+              <p>Hi,</p>
+              <p>We’re happy to let you know that the problem you reported has been resolved successfully.</p>
+              <p>If you face any further issues, feel free to reach out to our support team.</p>
+              <p>Thank you for your patience!</p>
+              <p style="margin-top:20px;">Best regards,<br>The Support Team</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
 </html>
 `
   }

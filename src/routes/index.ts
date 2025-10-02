@@ -7,6 +7,8 @@ import ChatRoutes from '../app/modules/chat/chat.route';
 import MessageRoutes from '../app/modules/Message/message.route';
 import PaymentRoutes from '../app/modules/payment/payment.route';
 import AdminRoutes from '../app/modules/admin/admin.route';
+import SupportRoutes from '../app/modules/HelpAndSupport/support.route';
+
 const router = express.Router();
 
 const apiRoutes = [
@@ -41,6 +43,10 @@ const apiRoutes = [
   {
     path: '/admin',
     route: AdminRoutes
+  },
+  {
+    path: '/support',
+    route: SupportRoutes
   }
 ];
 
