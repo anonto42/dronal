@@ -53,6 +53,30 @@ const updateTermsSchema = z.object({
   }).strict()
 });
 
+const blockAndUnblockUserSchema = z.object({
+  params: z.object({
+    id: z.string({ invalid_type_error: "User id is required" }),
+    status: z.enum(["block", "unblock"], { required_error: "Status is required" }),
+  }).strict()
+});
+
+const getRequestsSchema = z.object({
+  query: z.object({
+    page: z.string().optional().default("1"),
+    limit: z.string().optional().default("10"),
+    sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+    sortBy: z.string().optional().default("createdAt"),
+    id: z.string().optional(),
+  }).strict()
+});
+
+const approveOrRejectSchema = z.object({
+  params: z.object({
+    id: z.string({ invalid_type_error: "User id is required" }),
+    status: z.enum(["approve", "reject"], { required_error: "Status is required" }),
+  }).strict()
+});
+
 export const AdminValidation = {
   usersAdminSchema,
   idParamsAdminSchema,
@@ -61,4 +85,7 @@ export const AdminValidation = {
   updateCategorySchema,
   updatePolicySchema,
   updateTermsSchema,
+  blockAndUnblockUserSchema,
+  getRequestsSchema,
+  approveOrRejectSchema,
 };

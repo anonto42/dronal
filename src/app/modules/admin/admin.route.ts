@@ -39,7 +39,15 @@ export class AdminRoutes {
         validateRequest(AdminValidation.idParamsAdminSchema),
         this.adminController.getUser
       );
-      // Have to work 
+    
+    this 
+      .router
+      .route("/users/:id/:status")
+      .delete(
+        auth( USER_ROLES.ADMIN ),
+        validateRequest(AdminValidation.blockAndUnblockUserSchema),
+        this.adminController.blockAndUnblockUser
+      );
     
     this
       .router
@@ -72,31 +80,48 @@ export class AdminRoutes {
       );
       
     this
-    .router
-    .route("/policy")
-    .get(
-      auth( USER_ROLES.ADMIN, USER_ROLES.CLIENT, USER_ROLES.PROVIDER ),
-      this.adminController.getPolicy
-    )
-    .patch(
-      auth( USER_ROLES.ADMIN ),
-      validateRequest(AdminValidation.updatePolicySchema),
-      this.adminController.updatePolicy
-    );
+      .router
+      .route("/policy")
+      .get(
+        auth( USER_ROLES.ADMIN, USER_ROLES.CLIENT, USER_ROLES.PROVIDER ),
+        this.adminController.getPolicy
+      )
+      .patch(
+        auth( USER_ROLES.ADMIN ),
+        validateRequest(AdminValidation.updatePolicySchema),
+        this.adminController.updatePolicy
+      );
 
     this
-    .router
-    .route("/terms")
-    .get(
-      auth( USER_ROLES.ADMIN, USER_ROLES.CLIENT, USER_ROLES.PROVIDER ),
-      this.adminController.getTerms
-    )
-    .patch(
-      auth( USER_ROLES.ADMIN ),
-      validateRequest(AdminValidation.updateTermsSchema),
-      this.adminController.updateTerms
-    );
+      .router
+      .route("/terms")
+      .get(
+        auth( USER_ROLES.ADMIN, USER_ROLES.CLIENT, USER_ROLES.PROVIDER ),
+        this.adminController.getTerms
+      )
+      .patch(
+        auth( USER_ROLES.ADMIN ),
+        validateRequest(AdminValidation.updateTermsSchema),
+        this.adminController.updateTerms
+      );
 
+    this
+      .router
+      .route("/requests")
+      .get(
+        auth( USER_ROLES.ADMIN ),
+        validateRequest(AdminValidation.getRequestsSchema),
+        this.adminController.getRequests
+      );
+      
+    this
+      .router
+      .route("/requests/:id/:status")
+      .post(
+        auth( USER_ROLES.ADMIN ),
+        validateRequest(AdminValidation.approveOrRejectSchema),
+        this.adminController.approveOrReject
+      );
   }
 }
 

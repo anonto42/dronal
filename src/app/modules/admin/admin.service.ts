@@ -3,10 +3,13 @@ import ApiError from "../../../errors/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
 import { IPaginationOptions } from "../../../types/pagination";
-import { USER_ROLES, VERIFICATION_STATUS } from "../../../enums/user";
+import { STATUS, USER_ROLES, VERIFICATION_STATUS } from "../../../enums/user";
 import { BOOKING_STATUS } from "../../../enums/booking";
 import { ICategory } from "../category/category.interface";
 import { ITermsAndPolicy } from "../terms&policy/terms&policy.interface";
+import { Notification } from "../notification/notification.model";
+import { emailQueue } from "../../../queues/email.queue";
+import { redisDB } from "../../../redis/connectedUsers";
 
 export class AdminService {
   private adminRepo: AdminRepository;
@@ -25,7 +28,7 @@ export class AdminService {
   }
 
   public async getUsers(query: IPaginationOptions & { role: "user" | "provider" | "all" }) {
-    return await this.adminRepo.getUsers(query, "name _id contact address role category");
+    return await this.adminRepo.getUsers(query, "name _id contact address role category status");
   }
 
   public async getUser(id: string ) {
@@ -48,11 +51,30 @@ export class AdminService {
       }
     } else if (result.role == USER_ROLES.PROVIDER) {
 
+      const reviews = await this.adminRepo.getReviews({
+        filter: { provider: result._id },
+        select: "-updatedAt -__v -provider -service",
+        populate: {
+          path: "creator",
+          select: "name image"
+        }
+      });
+
+      let averageRating = 0;
+
+      if (reviews.length > 0) {
+        const total = reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+        averageRating = total / reviews.length;
+      }
+
       const completedWork = await this.adminRepo.countBookings({ provider: result._id, bookingStatus: BOOKING_STATUS.COMPLETED });
       const upCommingWork = await this.adminRepo.countBookings({ provider: result._id, bookingStatus: BOOKING_STATUS.ACCEPTED });
       const cancelWork = await this.adminRepo.countBookings({ provider: result._id, bookingStatus: BOOKING_STATUS.CANCELLED });
 
-      const verificationFile = await this.adminRepo.getVerifications({ user: result._id, status: VERIFICATION_STATUS.APPROVED });
+      const verificationFile = await this.adminRepo.getVerifications({
+        user: result._id, 
+        // status: VERIFICATION_STATUS.APPROVED 
+      });
 
       return {
         name: result.name,
@@ -74,7 +96,7 @@ export class AdminService {
         //
         experience: result.experience,
         totalDoneWork: completedWork,
-        review: 0,
+        review: averageRating,
         
         //
         expertise: result.category,
@@ -173,4 +195,82 @@ export class AdminService {
       content: terms.content ?? existing.content,
     } as ITermsAndPolicy);
   }
+
+  public async blockAndUnblockUser(id: string, block: string) {
+    const result = await this.adminRepo.updateUser(new Types.ObjectId(id), { 
+      status: block == "block" ? STATUS.BLOCKED : block == "unblock" ? STATUS.ACTIVE : STATUS.BLOCKED 
+    });
+    if (!result) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "User not found");
+    }
+
+    return result.status;
+  }
+
+  public async getRequests(query: IPaginationOptions) {
+    return await this.adminRepo.getRequests({
+      filter: { status: VERIFICATION_STATUS.PENDING },
+      select: "user status",
+      populate: {
+        path: "user",
+        select: "name image category email contact nationalId"
+      },
+      paginationOptions: query
+    });
+  }
+
+  public async approveOrReject(id: string, status: string) {
+    if(status != "approve" && status != "reject") {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid status");
+    }
+
+    const resultverification = await this.adminRepo.getRequests({
+      filter: { _id: new Types.ObjectId(id) }
+    });
+    if (!resultverification.length) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Request not found");
+    }
+
+    if (resultverification[0].status == VERIFICATION_STATUS.APPROVED || resultverification[0].status == VERIFICATION_STATUS.REJECTED) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, `Request already ${resultverification[0].status}`);
+    }
+
+    const result = await this.adminRepo.updateRequests({
+      _id: new Types.ObjectId(id)
+    }, { 
+      status: status == "approve" ? VERIFICATION_STATUS.APPROVED : status == "reject" ? VERIFICATION_STATUS.REJECTED : VERIFICATION_STATUS.PENDING 
+    });
+    if (!result) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Request not found");
+    }
+
+    // Have to add the notification
+    const message = await Notification.create({
+      for: resultverification[0].user,
+      message: "Your verification request has been " + (status == "approve" ? "approved" : "rejected"),
+    });
+    
+    await emailQueue.add("socket-notification", message, {
+      removeOnComplete: true,
+      removeOnFail: false,
+    });
+    
+    const isProviderOnline = await redisDB.get(`user:${resultverification[0].user}`);
+    if (!isProviderOnline) {
+      const provider = await this.adminRepo.getUser(resultverification[0].user);
+      await emailQueue.add("push-notification", {
+        notification: {
+          title: "Your verification request has been " + (status == "approve" ? "approved" : "rejected"),
+          body: `Admin has ${status == "approve" ? "approved" : "rejected"} your verification request`
+        },
+        token: provider?.fcmToken
+      }, {
+        removeOnComplete: true,
+        removeOnFail: false,
+      });
+    };
+
+    return result.status;
+  }
+  
 }

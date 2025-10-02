@@ -137,4 +137,38 @@ export class AdminController {
       data: result,
     });
   });
+
+  public blockAndUnblockUser = catchAsync(async (req: Request, res: Response) => {
+    const result = await this.adminService.blockAndUnblockUser(req.params.id, req.params.status);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "User blocked successfully",
+      data: result,
+    });
+  });
+
+  public getRequests = catchAsync(async (req: Request, res: Response) => {
+    const result = await this.adminService.getRequests(req.query as any);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Requests retrieved successfully",
+      data: result,
+    });
+  });
+
+  public approveOrReject = catchAsync(async (req: Request, res: Response) => {
+    const result = await this.adminService.approveOrReject(req.params.id, req.params.status);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Request approved/rejected successfully",
+      data: result,
+    });
+  });
+
 }

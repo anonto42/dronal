@@ -1,5 +1,5 @@
 
-import { Types } from "mongoose";
+import { PopulateOptions, Types } from "mongoose";
 import { USER_ROLES } from "../../../enums/user";
 import { IPaginationOptions } from "../../../types/pagination";
 import { IUser } from "../user/user.interface";
@@ -12,6 +12,9 @@ import { ICategory } from "../category/category.interface";
 import { Category } from "../category/category.model";
 import { ITermsAndPolicy } from "../terms&policy/terms&policy.interface";
 import { TermsModel } from "../terms&policy/terms&policy.model";
+import { IReview } from "../review/review.interface";
+import { Review } from "../review/review.model";
+import { paginationHelper } from "../../../helpers/paginationHelper";
 
 export class AdminRepository {
   
@@ -113,5 +116,86 @@ export class AdminRepository {
       .lean()
       .exec();
   }
+
+  async getReviews({
+      filter,
+      select,
+      populate,
+      paginationOptions
+    }: {
+      filter: Partial<IReview>;
+      select?: string;
+      populate?: PopulateOptions;
+      paginationOptions?: IPaginationOptions;
+    }) {
+      
+      let query = Review.find(filter);
+      
+      // Only select if defined
+      if (select) {
+        query = query.select(select);
+      }
+      
+      // Only populate if defined
+      if (populate) {
+        query = query.populate(populate);
+      }
+      
+      // Apply pagination if provided
+      if (paginationOptions) {
+        const { page, limit, sortBy, sortOrder } = paginationHelper.calculatePagination(paginationOptions);
   
+        query = query
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 });
+      }
+  
+      return query.lean().exec();
+  }
+
+  async updateUser(id: Types.ObjectId, payload: Partial<IUser>): Promise<IUser | null> {
+    return User.findByIdAndUpdate(id, payload, { new: true }).lean().exec();
+  }
+
+  async getRequests({
+    filter,
+    select,
+    populate,
+    paginationOptions
+  }: {
+    filter: Partial<IVerificaiton>;
+    select?: string;
+    populate?: PopulateOptions;
+    paginationOptions?: IPaginationOptions;
+  }) {
+    
+    let query = Verification.find(filter);
+    
+    // Only select if defined
+    if (select) {
+      query = query.select(select);
+    }
+    
+    // Only populate if defined
+    if (populate) {
+      query = query.populate(populate);
+    }
+    
+    // Apply pagination if provided
+    if (paginationOptions) {
+      const { page, limit, sortBy, sortOrder } = paginationHelper.calculatePagination(paginationOptions);
+
+      query = query
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 });
+    }
+
+    return query.lean().exec();
+  }
+
+  async updateRequests(filter: Partial<IVerificaiton>, payload: Partial<IVerificaiton>): Promise<IVerificaiton | null> {
+    return Verification.findOneAndUpdate(filter, payload, { new: true }).lean().exec();
+  }
 }
