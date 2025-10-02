@@ -570,8 +570,6 @@ export class ClientService {
     const provider = await this.userRepo.findAndUpdateProvider(booking[0].provider, { wallet: findProvider.wallet + booking[0].service.price }) as IUser;
     if (!provider) throw new ApiError(StatusCodes.NOT_FOUND, "Provider not found!");
 
-
-
     const notification = await Notification.create({
       for: booking[0].provider,
       message: "Your Booking accepted"
