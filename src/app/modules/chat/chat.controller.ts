@@ -57,5 +57,15 @@ export class ChatController {
     });
   });
 
-  
+  public findChat = catchAsync(async (req: Request, res: Response) => {
+    
+    const result = await this.chatService.findChat(req.user, req.query.name as string);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Chat found successfully",
+      data: result,
+    });
+  });
 }

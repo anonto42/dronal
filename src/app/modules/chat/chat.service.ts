@@ -3,6 +3,7 @@ import ApiError from "../../../errors/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
 import { JwtPayload } from "jsonwebtoken";
+import { User } from "../user/user.model";
 
 export class ChatService {
   private chatRepo: ChatRepository;
@@ -41,6 +42,19 @@ export class ChatService {
     if (!isParticipant) throw new ApiError(StatusCodes.UNAUTHORIZED, "You are not a participant of this chat!");
 
     return await this.chatRepo.delete(new Types.ObjectId(id));
+  }
+
+  public async findChat (payload: JwtPayload, name: string ){
+    
+    const user = await User.find({
+      name: { $regex: name, $options: "i" }
+    }).select("_id name image");
+
+    console.log({name, user})
+
+    if (user.length < 1) throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
+
+    return user
   }
 
 }

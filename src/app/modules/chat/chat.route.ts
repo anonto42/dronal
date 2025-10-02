@@ -16,7 +16,8 @@ export class ChatRoutes {
   }
 
   private initializeRoutes(): void {
-    this.router
+    this
+      .router
       .route("/")
       .get(
         auth( USER_ROLES.PROVIDER, USER_ROLES.CLIENT, USER_ROLES.ADMIN ),
@@ -27,8 +28,17 @@ export class ChatRoutes {
         validateRequest(ChatValidation.createChatSchema),
         this.chatController.create
       );
-
-    this.router
+      
+    this
+      .router
+      .route("/find")
+      .get(
+        auth( USER_ROLES.PROVIDER, USER_ROLES.CLIENT, USER_ROLES.ADMIN ),
+        this.chatController.findChat
+      );
+      
+    this
+      .router
       .route("/:id")
       .get(
         auth( USER_ROLES.PROVIDER, USER_ROLES.CLIENT, USER_ROLES.ADMIN ),
@@ -39,7 +49,8 @@ export class ChatRoutes {
         auth( USER_ROLES.PROVIDER, USER_ROLES.CLIENT, USER_ROLES.ADMIN ),
         validateRequest(ChatValidation.chatIdSchema),
         this.chatController.deleteOnChat
-      )
+      );
+
   }
 }
 

@@ -28,7 +28,20 @@ export class ChatRepository {
   }
 
   async findAll(id: Types.ObjectId) {
-    return Chat.find({ participants: id }).populate("participants","name image").select("-createdAt -updatedAt -__v").lean().exec();
+    return Chat
+    .find({ participants: id })
+    .populate("participants","name image")
+    .populate({
+      path: "lastMessage", 
+      select: "sender message isSeen createdAt",
+      populate: {
+        path: "sender",
+        select: "name image"
+      }
+    })
+    .select("-createdAt -updatedAt -__v")
+    .lean()
+    .exec();
   }
 
 }
