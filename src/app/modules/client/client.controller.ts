@@ -90,8 +90,8 @@ export class ClientController {
 
     sendResponse(res, {
       success: true,
-      statusCode: StatusCodes.OK,
-      message: "Favorite added successfully",
+      statusCode: StatusCodes.OK,//@ts-ignore
+      message: result.message? result.message : "Favorite added successfully",
       data: result,
     });
   });

@@ -462,7 +462,14 @@ export class ClientService {
 
   public async addFavorite(user: JwtPayload, id: Types.ObjectId) {
     const isFavorite = await this.userRepo.getFavorites({ customer: new Types.ObjectId(user.id!), provider: id },"provider");
-    if(isFavorite?.length > 0) throw new ApiError(StatusCodes.BAD_REQUEST, "Provider is already in the favorite list!");
+    // If already added then remove it
+    if(isFavorite?.length > 0) {
+      const provider = await this.userRepo.removeFavorite(id);
+      if (!provider) throw new ApiError(StatusCodes.NOT_FOUND, "Favorite item is not exist on the list!");
+      return {
+        message: "Favorite removed successfully",
+      };
+    };
     const provider = await this.userRepo.addFavorite(new Types.ObjectId(user.id!), id);
     if (!provider) throw new ApiError(StatusCodes.NOT_FOUND, "Provider not found!");
 

@@ -91,7 +91,7 @@ export class ClientRepository {
   }
 
   async removeFavorite(id: Types.ObjectId) {
-    return CustomerFavorite.findByIdAndDelete(id).lean().exec();
+    return CustomerFavorite.findOneAndDelete({ provider: id }).lean().exec();
   }
 
   async getFavorites(query: Partial<ICustomerFavorite>,select?: string) {
