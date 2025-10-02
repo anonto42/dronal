@@ -34,7 +34,11 @@ const emailWorker = new Worker(
 
     if(job.name === "push-notification") {
       await messageSend(job.data);
-    }
+    };
+
+    if(job.name === "socket-message") {
+      socket.emit("message", job.data);
+    };
     
   },
   { connection: redisConfig }
