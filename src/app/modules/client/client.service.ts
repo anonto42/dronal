@@ -242,7 +242,6 @@ export class ClientService {
     }
   }
 
-  // Have to work on the reviews
   public async getProviderById(user: JwtPayload, id: Types.ObjectId, query: TServicePagination) {
 
     const provider = await this.userRepo.findById(id);
