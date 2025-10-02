@@ -6,8 +6,6 @@ import { User } from "../user/user.model";
 import { USER_ROLES } from "../../../enums/user";
 import { Notification } from "../notification/notification.model";
 import { emailQueue } from "../../../queues/email.queue";
-import { redisDB } from "../../../redis/connectedUsers";
-import { IUser } from "../user/user.interface";
 import { Types } from "mongoose";
 import { SupportStatus } from "../../../enums/support";
 import { htmlTemplate } from "../../../shared/htmlTemplate";
