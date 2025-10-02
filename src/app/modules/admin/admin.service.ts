@@ -10,6 +10,9 @@ import { ITermsAndPolicy } from "../terms&policy/terms&policy.interface";
 import { Notification } from "../notification/notification.model";
 import { emailQueue } from "../../../queues/email.queue";
 import { redisDB } from "../../../redis/connectedUsers";
+import { User } from "../user/user.model";
+import { Verification } from "../verification/verification.model";
+import { Support } from "../HelpAndSupport/support.model";
 
 export class AdminService {
   private adminRepo: AdminRepository;
@@ -273,4 +276,35 @@ export class AdminService {
     return result.status;
   }
   
+  public async find(query: IPaginationOptions & { search: string, compo: "user" | "verification" | "support" }) {
+    const user = await User.find({
+      name: { $regex: query.search, $options: "i" }
+    }).select("name image category email contact nationalId").lean().exec();
+
+    if (query.compo == "user") {
+      return user;
+    }
+
+    if (query.compo == "verification") {
+      return await Verification.find({
+        user: { $in: user.map((user) => user._id) }
+      }).select("user status").populate({
+        path: "user",
+        select: "name image category email contact nationalId"
+      }).lean().exec();
+    }
+
+    if (query.compo == "support") {
+      return await Support.find({
+        user: { $in: user.map((user) => user._id) }
+      })
+      .select("user status title")
+      .populate({
+        path: "user",
+        select: "name image category email contact nationalId"
+      })
+      .lean()
+      .exec();
+    }
+  }
 }

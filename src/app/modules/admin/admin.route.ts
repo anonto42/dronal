@@ -122,6 +122,15 @@ export class AdminRoutes {
         validateRequest(AdminValidation.approveOrRejectSchema),
         this.adminController.approveOrReject
       );
+
+    this
+      .router
+      .route('/find')
+      .get(
+        auth( USER_ROLES.ADMIN ),
+        validateRequest(AdminValidation.findSchema),
+        this.adminController.find
+      );
   }
 }
 

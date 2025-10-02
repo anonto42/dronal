@@ -77,6 +77,17 @@ const approveOrRejectSchema = z.object({
   }).strict()
 });
 
+const findSchema = z.object({
+  query: z.object({
+    page: z.string().optional().default("1"),
+    limit: z.string().optional().default("10"),
+    sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+    sortBy: z.string().optional().default("createdAt"),
+    search: z.string().optional(),
+    compo: z.enum(["user", "verification", "support"],{ invalid_type_error: "You must give the type on this user, verification, support"}).optional().default("user"),
+  }).strict()
+});
+
 export const AdminValidation = {
   usersAdminSchema,
   idParamsAdminSchema,
@@ -88,4 +99,5 @@ export const AdminValidation = {
   blockAndUnblockUserSchema,
   getRequestsSchema,
   approveOrRejectSchema,
+  findSchema
 };
