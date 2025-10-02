@@ -79,7 +79,10 @@ export class MessageService {
 
     public async messagesOfChat(user: JwtPayload, query: IPaginationOptions, chatId: string) {
         return await this.messageRepository.findMany({
-            filter: { chatId: new Types.ObjectId( chatId ), sender: new Types.ObjectId( user.id )},
+            filter: { 
+                chatId: new Types.ObjectId( chatId ), 
+                // sender: new Types.ObjectId( user.id )
+            },
             paginationOptions: query,
             populate: {
                 path: "sender",
