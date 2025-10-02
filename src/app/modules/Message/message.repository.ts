@@ -3,12 +3,14 @@ import { IMessage } from "./message.interface";
 import { Message } from "./message.model";
 import { IPaginationOptions } from "../../../types/pagination";
 import { paginationHelper } from "../../../helpers/paginationHelper";
+import { IChat } from "../chat/chat.interface";
+import { Chat } from "../chat/chat.model";
 
 
 export class MessageRepository {
 
     async create(data: Partial<IMessage>){
-        return Message.create(data);
+        return (await Message.create(data)).populate("sender","name image");
     }
 
     async findMany(
@@ -55,5 +57,13 @@ export class MessageRepository {
 
     async deleteOne(query: Partial<IMessage>) {
         return Message.deleteOne(query).lean().exec();
+    }
+
+    async findChat(query: Partial<IChat>) {
+        return Chat.findOne(query).lean().exec();
+    }
+
+    async updateChat(query: Partial<IChat>, data: Partial<IChat>) {
+        return Chat.updateOne(query, data).lean().exec();
     }
 }
