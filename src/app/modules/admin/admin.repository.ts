@@ -18,12 +18,12 @@ import { paginationHelper } from "../../../helpers/paginationHelper";
 
 export class AdminRepository {
   
-  async getUsers(query: IPaginationOptions & { role: "user" | "provider" | "all" }, select?: string): Promise<IUser[]> {
+  async getUsers(query: IPaginationOptions & { role: "user" | "provider" }, select?: string): Promise<IUser[]> {
     const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc" } = query;
     const skip = (page - 1) * limit;
     const sort = { [sortBy]: sortOrder };
     
-    if(query.role === "all") {
+    if(!query.role) {
       return User.find({ role: { $ne: USER_ROLES.ADMIN } }).select(select??"").skip(skip).limit(limit).sort(sort).lean().exec();
     }else if(query.role === "user") {
       return User.find({ role: USER_ROLES.CLIENT }).select(select??"").skip(skip).limit(limit).sort(sort).lean().exec();
@@ -33,6 +33,8 @@ export class AdminRepository {
     
     return [] as IUser[];
   }
+
+  async countUsers (){}
 
   async getUser(id: Types.ObjectId): Promise<IUser | null> {
     return User.findById(id).lean().exec();
