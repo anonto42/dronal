@@ -11,9 +11,9 @@ export enum STATUS {
 }
 
 export enum GENDER {
-  MAN = 'MAN',
-  WOMAN = 'WOMAN',
-  OTHER = 'OTHER'
+  MALE = 'Male',
+  FEMALE = 'Female',
+  OTHERS = 'Others'
 }
 
 export enum VERIFICATION_STATUS {

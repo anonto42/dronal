@@ -25,7 +25,7 @@ const userSchema = new Schema<IUser, UserModal>(
     gender: {
       type: String,
       enum: Object.values(GENDER),
-      default: GENDER.MAN
+      default: GENDER.MALE
     },
     whatsApp: {
       type: String,

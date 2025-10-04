@@ -6,7 +6,7 @@ const updateProviderProfileSchema = z.object({
   body: z.object({
     name: z.string().optional(), 
     overView: z.string().optional(), 
-    gender: z.enum([ GENDER.MAN, GENDER.WOMAN, GENDER.OTHER ], { invalid_type_error: `You must give the gender ${GENDER.OTHER} or ${GENDER.MAN} or ${GENDER.WOMAN}`}).optional(), 
+    gender: z.enum([ GENDER.MALE, GENDER.FEMALE, GENDER.OTHERS ], { invalid_type_error: `You must give the gender ${GENDER.OTHERS} or ${GENDER.MALE} or ${GENDER.FEMALE}`}).optional(), 
     dateOfBirth: z.string().optional(), 
     nationality: z.string().optional(), 
     experience: z.string().optional(), 
