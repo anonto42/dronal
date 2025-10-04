@@ -13,7 +13,7 @@ export class AdminController {
   }
 
   public overview = catchAsync(async (req: Request, res: Response) => {
-    const result = await this.adminService.overview();
+    const result = await this.adminService.overview(req.query.year as string);
 
     sendResponse(res, {
       success: true,
@@ -139,7 +139,7 @@ export class AdminController {
   });
 
   public blockAndUnblockUser = catchAsync(async (req: Request, res: Response) => {
-    const result = await this.adminService.blockAndUnblockUser(req.params.id, req.params.status);
+    const result = await this.adminService.blockAndUnblockUser(req.params.id, req.params.status as any);
 
     sendResponse(res, {
       success: true,
@@ -161,7 +161,7 @@ export class AdminController {
   });
 
   public approveOrReject = catchAsync(async (req: Request, res: Response) => {
-    const result = await this.adminService.approveOrReject(req.params.id, req.params.status);
+    const result = await this.adminService.approveOrReject(req.params.id, req.params.status as any);
 
     sendResponse(res, {
       success: true,
