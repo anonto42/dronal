@@ -170,6 +170,7 @@ export class AdminService {
 
     if (result.role === USER_ROLES.CLIENT) {
       return {
+        role: result.role,
         name: result.name,
         image: result.image,
         category: result.category,
@@ -205,6 +206,7 @@ export class AdminService {
 
       return {
         name: result.name,
+        role: result.role,
         image: result.image,
         category: result.category,
         gender: result.gender,
