@@ -57,7 +57,7 @@ export class AdminService {
         },
       },
       { $sort: { reviewCount: -1, avgRating: -1, lastReviewAt: -1 } },
-      { $limit: 5 },
+      { $limit: 3 },
       {
         $project: {
           _id: 0,
@@ -73,9 +73,10 @@ export class AdminService {
     ]);
 
     const recentServices = await Booking.find({})
-      .select("provider bookingStatus customer")
+      .select("provider bookingStatus customer date")
       .populate("provider", "name contact address category")
       .populate("customer", "name")
+      .populate("service", "price")
       .sort({ createdAt: -1 })
       .limit(10)
       .lean();
@@ -142,25 +143,49 @@ export class AdminService {
     };
   }
 
-  public async getUsers(query: IPaginationOptions & { role?: "user" | "provider" }) {
-    const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc", role } = query;
+  public async getUsers(
+    query: IPaginationOptions & { role?: "user" | "provider"; search?: string }
+  ) {
+
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      role,
+      search,
+    } = query;
+
     const skip = (page - 1) * limit;
 
-    let filter: any = { role: { $ne: USER_ROLES.ADMIN } };
-    if (role === "user") filter = { role: USER_ROLES.CLIENT };
-    if (role === "provider") filter = { role: USER_ROLES.PROVIDER };
+    const filter: any = {
+      role: { $ne: USER_ROLES.ADMIN },
+      status: { $ne: STATUS.DELETED },
+    };
+    
+    if (role === "user") filter.role = USER_ROLES.CLIENT;
+    if (role === "provider") filter.role = USER_ROLES.PROVIDER;
+
+    if (search && search.trim() !== "") {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { contact: { $regex: search, $options: "i" } },
+      ];
+    }
 
     const [data, total] = await Promise.all([
       User.find(filter)
-        .select("name _id contact address role category status")
+        .select("name _id contact address role category status email")
         .skip(skip)
         .limit(limit)
-        .sort({ [sortBy as string]: sortOrder === "asc" ? 1 : -1 })
+        .sort({ [sortBy]: sortOrder === "asc" ? 1 : -1 })
         .lean()
         .exec(),
       User.countDocuments(filter),
     ]);
 
+    // 📦 Return paginated response
     return buildPaginationResponse(data, total, page, limit);
   }
 
@@ -250,7 +275,7 @@ export class AdminService {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Category name is required");
     }
     
-    if (category.subCategory?.length > 0) category.subCategory = [];
+    if (category.subCategory?.length <= 0) category.subCategory = [];
     return Category.create(category);
   }
 
@@ -339,9 +364,9 @@ export class AdminService {
       .exec();
   }
 
-  public async blockAndUnblockUser(id: string, block: "block" | "unblock") {
+  public async blockAndUnblockUser(id: string, block: "block" | "unblock" | "delete") {
     const status =
-      block === "block" ? STATUS.BLOCKED : block === "unblock" ? STATUS.ACTIVE : STATUS.BLOCKED;
+      block === "block" ? STATUS.BLOCKED : block === "unblock" ? STATUS.ACTIVE : block === "delete"? STATUS.DELETED : STATUS.BLOCKED;
 
     const result = await User.findByIdAndUpdate(
       new Types.ObjectId(id),
@@ -355,12 +380,43 @@ export class AdminService {
     return result.status;
   }
 
-  public async getRequests(query: IPaginationOptions) {
-    const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc" } = query;
+  public async getRequests(query: IPaginationOptions & { search?: string; status?: string }) {
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      search,
+      status,
+    } = query;
+
     const skip = (page - 1) * limit;
 
+    const queryFilter: any = {};
+
+    if (status) {
+      if (status === "APPROVED") queryFilter.status = VERIFICATION_STATUS.APPROVED;
+      else if (status === "PENDING") queryFilter.status = VERIFICATION_STATUS.PENDING;
+      else if (status === "REJECTED") queryFilter.status = VERIFICATION_STATUS.REJECTED;
+      else if (status === "UNVERIFIED") queryFilter.status = VERIFICATION_STATUS.UNVERIFIED;
+    }
+
+    const userFilter: any = {};
+    if (search && search.trim() !== "") {
+      userFilter.$or = [
+        { name: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    let userIds: string[] = [];
+    if (Object.keys(userFilter).length > 0) {
+      const matchedUsers = await User.find(userFilter).select("_id").lean();
+      userIds = matchedUsers.map((u) => u._id.toString());
+      queryFilter.user = { $in: userIds };
+    }
+
     const [data, total] = await Promise.all([
-      Verification.find({ status: VERIFICATION_STATUS.PENDING })
+      Verification.find(queryFilter)
         .select("user status")
         .populate({
           path: "user",
@@ -368,12 +424,13 @@ export class AdminService {
         })
         .skip(skip)
         .limit(limit)
-        .sort({ [sortBy as string]: sortOrder === "asc" ? 1 : -1 })
+        .sort({ [sortBy]: sortOrder === "asc" ? 1 : -1 })
         .lean()
         .exec(),
-      Verification.countDocuments({ status: VERIFICATION_STATUS.PENDING }),
+      Verification.countDocuments(queryFilter),
     ]);
 
+    // 📦 Return paginated response
     return buildPaginationResponse(data, total, page, limit);
   }
 

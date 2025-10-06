@@ -9,6 +9,7 @@ import { emailQueue } from "../../../queues/email.queue";
 import { Types } from "mongoose";
 import { SupportStatus } from "../../../enums/support";
 import { htmlTemplate } from "../../../shared/htmlTemplate";
+import { buildPaginationResponse } from "../../../util/pagination";
 
 export class SupportService {
 
@@ -41,19 +42,55 @@ export class SupportService {
         return support;
     }
 
-    async getSupports(pagination: IPaginationOptions) {
-        const { page = 1, limit = 10, sortOrder = "desc", sortBy = "createdAt" } = pagination;
-        
-        const query = {};
-        
-        const result = await Support.find(query)
-            .sort({ [sortBy]: sortOrder })
-            .select("-updatedAt ")
+    public async getSupports(pagination: IPaginationOptions & { status?: string; search?: string }) {
+        const {
+            page = 1,
+            limit = 10,
+            sortOrder = "desc",
+            sortBy = "createdAt",
+            status,
+            search,
+        } = pagination;
+
+        const skip = (page - 1) * limit;
+        const queryFilter: any = {};
+
+        if (status && status.trim() !== "") {
+            queryFilter.status = status == "pending"? SupportStatus.PENDING : SupportStatus.COMPLETED;
+        }
+
+        if (search && search.trim() !== "") {
+            const userFilter: any = {
+            $or: [
+                { name: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+                // { contact: { $regex: search, $options: "i" } },
+            ],
+            };
+
+            // Find matching users
+            const matchedUsers = await User.find(userFilter).select("_id").lean();
+            const userIds = matchedUsers.map((u) => u._id);
+
+            // Apply to main query
+            queryFilter.user = { $in: userIds };
+        }
+
+        // ⚙️ Fetch paginated results
+        const [data, total] = await Promise.all([
+            Support.find(queryFilter)
+            .sort({ [sortBy]: sortOrder === "asc" ? 1 : -1 })
+            .select("-updatedAt -__v")
             .populate("user", "name email role category contact")
-            .skip((page - 1) * limit)
-            .limit(limit);
-        
-        return result;
+            .skip(skip)
+            .limit(limit)
+            .lean()
+            .exec(),
+            Support.countDocuments(queryFilter),
+        ]);
+
+        // 📦 Return paginated response
+        return buildPaginationResponse(data, total, page, limit);
     }
 
     async markAsResolve(user: JwtPayload, supportId: Types.ObjectId ) {

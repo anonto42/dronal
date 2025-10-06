@@ -51,6 +51,8 @@ export class AdminController {
 
     req.body.image = image;
 
+    if( req.body.subCategory ) req.body.subCategory = JSON.parse(req.body.subCategory);
+
     const result = await this.adminService.addNewCategory(req.body);
 
     sendResponse(res, {
@@ -73,6 +75,13 @@ export class AdminController {
   });
 
   public updateCategory = catchAsync(async (req: Request, res: Response) => {
+
+    const image = getSingleFilePath(req.files, "image");
+
+    if (image) req.body.image = image;
+
+    if(req.body.subCategory) req.body.subCategory = JSON.parse(req.body.subCategory);
+
     const result = await this.adminService.updateCategory(req.body.id, req.body);
 
     sendResponse(res, {

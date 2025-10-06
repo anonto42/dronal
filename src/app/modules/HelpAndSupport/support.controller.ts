@@ -10,7 +10,7 @@ export class SupportController {
     private supportService: SupportService;
 
     constructor() {
-        this.supportService = new SupportService();
+      this.supportService = new SupportService();
     }
 
     public createSupport = catchAsync(async (req: Request | any, res: Response) => {

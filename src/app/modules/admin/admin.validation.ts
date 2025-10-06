@@ -7,6 +7,7 @@ const usersAdminSchema = z.object({
     sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
     sortBy: z.string().optional().default("createdAt"),
     role: z.enum(["user", "provider", "all"]).optional().default("all"),
+    search: z.string().optional()
   }).strict()
 });
 
@@ -19,7 +20,7 @@ const idParamsAdminSchema = z.object({
 const addNewCategorySchema = z.object({
   body: z.object({
     name: z.string({ invalid_type_error: "Category name is required" }),
-    subCategory: z.array(z.string({ invalid_type_error: "Subcategory is required" })).optional(),
+    subCategory: z.any(),
   }).strict()
 });
 
@@ -37,7 +38,7 @@ const updateCategorySchema = z.object({
   body: z.object({
     id: z.string({ required_error: "Category id is required" }),
     name: z.string({ invalid_type_error: "Category name is required" }).optional(),
-    subCategory: z.array(z.string({ invalid_type_error: "Subcategory is required" })).optional(),
+    subCategory: z.any(),
   }).strict()
 });
 
@@ -56,7 +57,7 @@ const updateTermsSchema = z.object({
 const blockAndUnblockUserSchema = z.object({
   params: z.object({
     id: z.string({ invalid_type_error: "User id is required" }),
-    status: z.enum(["block", "unblock"], { required_error: "Status is required" }),
+    status: z.enum(["block", "unblock", "delete", ], { required_error: "Status is required" }),
   }).strict()
 });
 
@@ -67,6 +68,8 @@ const getRequestsSchema = z.object({
     sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
     sortBy: z.string().optional().default("createdAt"),
     id: z.string().optional(),
+    status: z.string().optional(),
+    search: z.string().optional()
   }).strict()
 });
 
