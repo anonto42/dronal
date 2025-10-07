@@ -1,0 +1,351 @@
+import PDFDocument from 'pdfkit';
+import { Request, Response } from 'express';
+import ApiError from '../errors/ApiError';
+import { StatusCodes } from 'http-status-codes';
+import { ClientRepository } from '../app/modules/client/client.repository';
+import { Types } from 'mongoose';
+
+// Types
+type PaymentData = {
+  service: {
+    price: number;
+    category: string;
+    subcategory: string;
+  };
+  customer: {
+    name: string;
+    address: string;
+    email: string;
+  };
+  amount: number;
+  paymentStatus: string;
+  createdAt: string | Date;
+  id?: string;
+}
+
+export class PDFInvoiceMaker {
+  private doc: any;
+  private currentY: number;
+  private readonly margins = 50;
+  private pageWidth: number;
+
+  constructor() {
+    this.doc = new PDFDocument({ 
+      size: 'A4', 
+      margin: this.margins 
+    });
+    this.currentY = this.margins;
+    this.pageWidth = this.doc.page.width - (this.margins * 2);
+  }
+
+  // Utility functions
+  private formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+    }).format(amount);
+  }
+
+  private formatDate(date: string | Date): string {
+    return new Date(date).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  private addText(text: string, options: { 
+    fontSize?: number; 
+    bold?: boolean; 
+    align?: 'left' | 'center' | 'right';
+    color?: string;
+  } = {}) {
+    const { fontSize = 12, bold = false, align = 'left', color = '#000000' } = options;
+    
+    this.doc
+      .fontSize(fontSize)
+      .font(bold ? 'Helvetica-Bold' : 'Helvetica')
+      .fillColor(color)
+      .text(text, this.margins, this.currentY, {
+        align,
+        width: this.pageWidth
+      });
+
+    this.currentY += fontSize + 8;
+    return this;
+  }
+
+  private addSectionHeader(title: string) {
+    this.addText(title, { fontSize: 14, bold: true, color: '#2c3e50' });
+    this.currentY += 5;
+    return this;
+  }
+
+  private addHorizontalLine() {
+    this.doc
+      .moveTo(this.margins, this.currentY)
+      .lineTo(this.margins + this.pageWidth, this.currentY)
+      .strokeColor('#e0e0e0')
+      .lineWidth(1)
+      .stroke();
+    
+    this.currentY += 15;
+    return this;
+  }
+
+  private addSpacing(height: number = 10) {
+    this.currentY += height;
+    return this;
+  }
+
+  // Generate PDF
+  public async generatePDFBuffer(data: PaymentData): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      try {
+        const chunks: Buffer[] = [];
+
+        // Collect PDF data
+        this.doc.on('data', (chunk: any) => chunks.push(chunk));
+        this.doc.on('end', () => resolve(Buffer.concat(chunks)));
+        this.doc.on('error', reject);
+
+        // Generate PDF content
+        this.generatePDFContent(data);
+
+        // Finalize PDF
+        this.doc.end();
+
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  // Stream PDF
+  public streamPDFToResponse(res: Response, data: PaymentData, filename: string = 'invoice.pdf'): void {
+    // Set response headers
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    // Pipe PDF directly to response
+    this.doc.pipe(res);
+
+    // Generate PDF content
+    this.generatePDFContent(data);
+
+    // Finalize PDF
+    this.doc.end();
+  }
+
+  private generatePDFContent(data: PaymentData) {
+    // Header
+    this.addText('PAYMENT RECEIPT', { 
+      fontSize: 24, 
+      bold: true, 
+      align: 'center', 
+      color: '#2c3e50' 
+    });
+    this.addSpacing(5);
+    this.addText('Thank you for your payment', { 
+      fontSize: 14, 
+      align: 'center', 
+      color: '#7f8c8d' 
+    });
+    this.addSpacing(20);
+    this.addHorizontalLine();
+
+    // Service Information Section
+    this.addSectionHeader('SERVICE INFORMATION');
+    this.addText(`Category: ${data.service.category || 'N/A'}`);
+    this.addText(`Subcategory: ${data.service.subcategory || 'N/A'}`);
+    this.addText(`Status: ${data.paymentStatus || 'N/A'}`);
+    this.addText(`Amount: ${this.formatCurrency(data.service.price)}`);
+    this.addSpacing(15);
+
+    // User Information Section
+    this.addSectionHeader('USER INFORMATION');
+    this.addText(`Name: ${data.customer.name || 'N/A'}`);
+    this.addText(`Email: ${data.customer.email || 'N/A'}`);
+    this.addText(`Location: ${data.customer.address || 'N/A'}`);
+    this.addSpacing(15);
+
+    // Payment Details Section
+    this.addSectionHeader('PAYMENT DETAILS');
+    this.addText(`Service Fee: ${this.formatCurrency(data.amount)}`);
+    this.addText(`Date & Time: ${this.formatDate(data.createdAt)}`);
+    this.addSpacing(20);
+
+    // Summary Box
+    this.drawSummaryBox(data);
+    
+    // Footer
+    this.addSpacing(30);
+    this.addHorizontalLine();
+    this.addText('Generated by Fixmate', { 
+      fontSize: 10, 
+      align: 'center', 
+      color: '#2c3e50' 
+    });
+  }
+
+  private drawSummaryBox(data: PaymentData) {
+    const boxY = this.currentY;
+    const boxHeight = 80;
+    
+    // Draw box background
+    this.doc
+      .rect(this.margins, boxY, this.pageWidth, boxHeight)
+      .fill('#f8f9fa')
+      .stroke('#dee2e6');
+
+    // Add summary content
+    this.doc
+      .fontSize(16)
+      .font('Helvetica-Bold')
+      .fillColor('#2c3e50')
+      .text('PAYMENT SUMMARY', this.margins + 20, boxY + 15);
+
+    this.doc
+      .fontSize(12)
+      .font('Helvetica')
+      .fillColor('#27ae60')
+      .text('Total Paid:', this.margins + 20, boxY + 40)
+      .font('Helvetica-Bold')
+      .text(this.formatCurrency(data.amount), this.margins + 120, boxY + 40);
+
+    this.doc
+      .fontSize(10)
+      .font('Helvetica')
+      .fillColor('#7f8c8d')
+      .text(`Payment Date: ${this.formatDate(data.createdAt)}`, this.margins + 20, boxY + 60);
+
+    this.currentY += boxHeight + 20;
+  }
+}
+
+const userRepo = new ClientRepository()
+
+// Send derect responce
+export async function generateInvoiceAPI(req: Request, res: Response) {
+  try {
+
+    if( !req.params.id ) throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "You must give the id!");
+    
+    const info = await userRepo.wallet({
+      filter: { 
+        _id: new Types.ObjectId( req.params.id )
+      },// @ts-ignore
+      populate: "customer service",
+      select: "customer provider service booking amount paymentStatus createdAt"
+    });
+
+    const data = info[0]
+    if( !data ) throw new ApiError(StatusCodes.NOT_FOUND, "Payment details not found!")
+    
+    // Transform your data to match the expected structure
+    const paymentData: PaymentData = {
+      service: {//@ts-ignore
+        price: data.service.price || 0,//@ts-ignore
+        category: data.service.category|| 'N/A',//@ts-ignore
+        subcategory: data.service.subcategory || 'N/A'
+      },
+      customer: {//@ts-ignore
+        name: data.customer.name || 'N/A',//@ts-ignore
+        address: data.customer.address || 'N/A',//@ts-ignore
+        email: data.customer.email || 'N/A'
+      },//@ts-ignore
+      amount: data.amount || 0,//@ts-ignore
+      paymentStatus: data.paymentStatus || 'Unknown',//@ts-ignore
+      createdAt: data.createdAt || new Date(),//@ts-ignore
+      id: data._id || `inv-${Date.now()}`
+    };
+
+    const pdfMaker = new PDFInvoiceMaker();
+    
+    // Option 1: Stream directly (Recommended - most efficient)
+    pdfMaker.streamPDFToResponse(res, paymentData, `invoice-${paymentData.id}.pdf`);
+
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to generate PDF invoice' 
+      });
+    }
+  }
+}
+
+// Return as Buffer 
+export async function generateInvoiceAsBuffer(req: any, res: Response) {
+  try {
+    const paymentData: PaymentData = {
+      service: {
+        price: req.body.service?.price || 0,
+        category: req.body.service?.category || 'N/A',
+        subcategory: req.body.service?.subcategory || 'N/A'
+      },
+      customer: {
+        name: req.body.customer?.name || 'N/A',
+        address: req.body.customer?.address || 'N/A',
+        email: req.body.customer?.email || 'N/A'
+      },
+      amount: req.body.amount || 0,
+      paymentStatus: req.body.paymentStatus || 'Unknown',
+      createdAt: req.body.createdAt || new Date(),
+      id: req.body.id || `inv-${Date.now()}`
+    };
+
+    const pdfMaker = new PDFInvoiceMaker();
+    const pdfBuffer = await pdfMaker.generatePDFBuffer(paymentData);
+
+    // Set headers
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="invoice-${paymentData.id}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    // Send buffer
+    res.send(pdfBuffer);
+
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to generate PDF invoice' 
+    });
+  }
+}
+
+// Simple one-function approach
+export function streamPaymentPDF(res: Response, data: any) {
+  try {
+    const paymentData: PaymentData = {
+      service: {
+        price: data.service?.price || 0,
+        category: data.service?.category || 'N/A',
+        subcategory: data.service?.subcategory || 'N/A'
+      },
+      customer: {
+        name: data.customer?.name || 'N/A',
+        address: data.customer?.address || 'N/A',
+        email: data.customer?.email || 'N/A'
+      },
+      amount: data.amount || 0,
+      paymentStatus: data.paymentStatus || 'Unknown',
+      createdAt: data.createdAt || new Date(),
+      id: data.id || `inv-${Date.now()}`
+    };
+
+    const pdfMaker = new PDFInvoiceMaker();
+    pdfMaker.streamPDFToResponse(res, paymentData, 'payment-receipt.pdf');
+
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to generate PDF' });
+    }
+  }
+}
