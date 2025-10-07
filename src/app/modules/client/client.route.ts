@@ -5,6 +5,7 @@ import auth from "../../middlewares/auth";
 import fileUploadHandler from "../../middlewares/fileUploadHandler";
 import { USER_ROLES } from "../../../enums/user";
 import validateRequest from "../../middlewares/validateRequest";
+import { generateInvoiceAPI } from "../../../helpers/pdfMaker";
 
 export class ClientRoutes {
   public router: Router;
@@ -144,6 +145,30 @@ export class ClientRoutes {
       auth(USER_ROLES.CLIENT, USER_ROLES.ADMIN),
       validateRequest(ClientValidation.giveReviewSchema),
       this.clientController.giveReview
+    )
+
+    this
+    .router
+    .route("/payment-history")
+    .get(
+      auth(USER_ROLES.CLIENT, USER_ROLES.ADMIN),
+      validateRequest(ClientValidation.getCategoriesZodSchema),
+      this.clientController.getPaymentHistory
+    )
+
+    this
+    .router
+    .route("/payment/:id")
+    .get(
+      auth(USER_ROLES.CLIENT, USER_ROLES.ADMIN, USER_ROLES.PROVIDER),
+      this.clientController.getPaymentInfo
+    )
+
+    this
+    .router
+    .route("/download-pdf/:id")
+    .get(
+      generateInvoiceAPI
     )
 
   }

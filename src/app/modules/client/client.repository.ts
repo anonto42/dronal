@@ -211,4 +211,41 @@ export class ClientRepository {
   async giveReview(payload: Partial<IReview>) {
     return Review.create(payload);
   }
+
+  
+  async wallet({
+    filter,
+    select,
+    populate,
+    paginationOptions
+  } : { 
+    filter: Partial<IPayment>; 
+    select?: string; 
+    populate?: PopulateOptions; 
+    paginationOptions?: IPaginationOptions 
+  }): Promise<IPayment[] | []> {
+    let query = Payment.find(filter);
+  
+    // Only populate if defined
+    if (populate) {
+      query = query.populate(populate);
+    }
+  
+    // Only select if defined
+    if (select) {
+      query = query.select(select);
+    }
+  
+    // Apply pagination if provided
+    if (paginationOptions) {
+      const { skip, limit, sortBy, sortOrder } = paginationHelper.calculatePagination(paginationOptions);
+  
+      query = query
+        .skip(skip)
+        .limit(limit)
+        .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 });
+    }
+  
+    return query.lean().exec();
+  }
 }

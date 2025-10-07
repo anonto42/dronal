@@ -20,6 +20,7 @@ import { Notification } from '../notification/notification.model';
 import { emailQueue } from '../../../queues/email.queue';
 import { redisDB } from '../../../redis/connectedUsers';
 import { PAYMENT_STATUS } from '../../../enums/payment';
+import { PDFInvoiceMaker } from '../../../helpers/pdfMaker';
 
 export class ClientService {
   private userRepo: ClientRepository;
@@ -627,6 +628,66 @@ export class ClientService {
     if (!review) throw new ApiError(StatusCodes.NOT_FOUND, "Review not created!");
 
     return review;
+  }
+
+  public async walteHistory (user: JwtPayload, query: IPaginationOptions) {
+    const provider = await this.userRepo.findById(user.id) as IUser
+        
+    const wallet = await this.userRepo.wallet({
+      filter: { 
+        customer: new Types.ObjectId (user.id),// @ts-ignore
+        $or: [
+          { paymentStatus: PAYMENT_STATUS.PAYED },
+          { paymentStatus: PAYMENT_STATUS.PROVIDER_CANCELLED }
+        ] 
+      },
+      paginationOptions: query,
+      select: "service amount paymentStatus",//@ts-ignore
+      populate: [
+        {
+          path: "service",
+          select: "image category subCategory"  
+        }
+      ]
+    });
+    
+    return {
+      balance: provider.wallet,
+      history: wallet
+    };
+  }
+
+  public async paymentHistoryPage ( id?: string ) {
+    if( !id ) throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "You must give the id!");
+
+    const info = await this.userRepo.wallet({
+      filter: { 
+        _id: new Types.ObjectId( id )
+      },// @ts-ignore
+      populate: "customer service",
+      select: "customer provider service booking amount paymentStatus createdAt"
+    });
+
+    const data = info[0]
+    if( !data ) throw new ApiError(StatusCodes.NOT_FOUND, "Payment details not found!")
+
+    return {
+      serviceInfo: {//@ts-ignore
+        amount: data.service.price,//@ts-ignore
+        category: data.service.category,//@ts-ignore
+        subCategory: data.service.subcategory,
+        status: data.paymentStatus
+      },
+      userInformation: {//@ts-ignore
+        name: data.customer.name,//@ts-ignore
+        location: data.customer.address,//@ts-ignore
+        email: data.customer.email
+      },
+      paymentDetails: {//@ts-ignore
+        serviceFee: data.amount,//@ts-ignore
+        dateAndTime: data.createdAt
+      }
+    }
   }
 
 }

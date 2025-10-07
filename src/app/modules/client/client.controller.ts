@@ -219,4 +219,28 @@ export class ClientController {
     });
   });
 
+  public getPaymentHistory = catchAsync(async (req: Request , res: Response) => {
+
+    const result = await this.clientService.walteHistory(req.user, req.query);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Successfully get payment history!",
+      data: result,
+    });
+  });
+
+  public getPaymentInfo = catchAsync(async (req: Request , res: Response) => {
+
+    const result = await this.clientService.paymentHistoryPage( req.params.id! );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Successfully get a payment data!",
+      data: result,
+    });
+  });
+
 }
