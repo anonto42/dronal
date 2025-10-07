@@ -191,4 +191,15 @@ export class AdminController {
     });
   });
 
+  public getBookings = catchAsync(async (req: Request, res: Response) => {
+    const result = await this.adminService.find(req.query as any);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Successfull get all Bookings!",
+      data: result,
+    });
+  });
+
 }

@@ -131,6 +131,15 @@ export class AdminRoutes {
         validateRequest(AdminValidation.findSchema),
         this.adminController.find
       );
+
+    this
+      .router
+      .route('/bookings')
+      .get(
+        auth( USER_ROLES.ADMIN ),
+        validateRequest( AdminValidation.getBookingsSchema ),
+        this.adminController.getBookings
+      )
   }
 }
 
