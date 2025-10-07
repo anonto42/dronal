@@ -83,6 +83,19 @@ export class AdminService {
       .sort({ createdAt: -1 })
       .limit(10)
       .lean();
+
+    const payments = await Payment.find({
+      booking: { $in: recentServices.map(b => b._id) }
+    }).select("booking paymentId paymentStatus");
+
+    const enhancedRecentServices = recentServices.map(service => {
+      const payment = payments.find(p => p.booking.toString() === service._id.toString());
+      return {
+          ...service,
+          paymentId: payment ? payment.paymentId : null,
+          paymentStatus: payment ? payment.paymentStatus : null,
+      };
+    });
       
     const [{ totalRevenue = 0 } = {}] = await Payment.aggregate([
     { $match: { paymentStatus: PAYMENT_STATUS.PAYED } }, 
@@ -140,7 +153,7 @@ export class AdminService {
       totalProviders,
       upCommingOrders,
       totalRevenue,
-      recentServices,
+      recentServices: enhancedRecentServices,
       topProviders,
       monthlyEarning: result,
     };
@@ -549,6 +562,7 @@ export class AdminService {
 
     let queryDB: any = {};
 
+    // Handle booking status filter
     if (status) {
       switch (status.toLowerCase()) {
         case "accepted":
@@ -569,12 +583,10 @@ export class AdminService {
       }
     }
 
+    // Handle search functionality
     if (search && search.trim() !== "") {
-
       const providerIds = (await User.find({ name: { $regex: search, $options: "i" } }).select("_id")).map(u => u._id);
-
       const customerIds = (await User.find({ name: { $regex: search, $options: "i" } }).select("_id")).map(u => u._id);
-
       const serviceIds = (await Service.find({ category: { $regex: search, $options: "i" } }).select("_id")).map(s => s._id);
 
       queryDB.$or = [
@@ -584,6 +596,7 @@ export class AdminService {
       ];
     }
 
+    // Fetch bookings and payment details in parallel
     const [data, total] = await Promise.all([
       Booking.find(queryDB)
         .select("provider bookingStatus customer date service")
@@ -598,7 +611,21 @@ export class AdminService {
       Booking.countDocuments(queryDB),
     ]);
 
-    return buildPaginationResponse(data, total, page, limit);
+    const payments = await Payment.find({
+      booking: { $in: data.map(b => b._id) } 
+    }).select("booking paymentId paymentStatus");
+
+    
+    const enhancedData = data.map(booking => {
+      const payment = payments.find(p => p.booking.toString() === booking._id.toString());
+      return {
+        ...booking,
+        paymentId: payment ? payment._id : null, 
+        paymentStatus: payment ? payment.paymentStatus : null,
+      };
+    });
+
+    return buildPaginationResponse(enhancedData, total, page, limit);
   }
   
 }
