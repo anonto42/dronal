@@ -91,6 +91,17 @@ const findSchema = z.object({
   }).strict()
 });
 
+const getBookingsSchema = z.object({
+  query: z.object({
+    page: z.string().optional().default("1"),
+    limit: z.string().optional().default("10"),
+    sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+    sortBy: z.string().optional().default("createdAt"),
+    status: z.string().optional(),
+    search: z.string().optional()
+  }).strict()
+});
+
 export const AdminValidation = {
   usersAdminSchema,
   idParamsAdminSchema,
@@ -99,6 +110,7 @@ export const AdminValidation = {
   updateCategorySchema,
   updatePolicySchema,
   updateTermsSchema,
+  getBookingsSchema,
   blockAndUnblockUserSchema,
   getRequestsSchema,
   approveOrRejectSchema,
