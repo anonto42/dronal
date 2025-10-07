@@ -73,7 +73,9 @@ export class AdminService {
       },
     ]);
 
-    const recentServices = await Booking.find({})
+    const recentServices = await Booking.find({
+      bookingStatus: BOOKING_STATUS.COMPLETED
+    })
       .select("provider bookingStatus customer date")
       .populate("provider", "name contact address category")
       .populate("customer", "name")
@@ -81,7 +83,7 @@ export class AdminService {
       .sort({ createdAt: -1 })
       .limit(10)
       .lean();
-
+      
     const [{ totalRevenue = 0 } = {}] = await Payment.aggregate([
     { $match: { paymentStatus: PAYMENT_STATUS.PAYED } }, 
     {
