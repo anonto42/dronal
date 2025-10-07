@@ -24,6 +24,7 @@ import { Notification } from "../notification/notification.model";
 
 import { emailQueue } from "../../../queues/email.queue";
 import { redisDB } from "../../../redis/connectedUsers";
+import { Service } from "../service/service.model";
 
 export class AdminService {
 
@@ -430,7 +431,6 @@ export class AdminService {
       Verification.countDocuments(queryFilter),
     ]);
 
-    // 📦 Return paginated response
     return buildPaginationResponse(data, total, page, limit);
   }
 
@@ -541,4 +541,62 @@ export class AdminService {
     // default
     return buildPaginationResponse([], 0, page, limit);
   }
+
+  public async bookingData(query: IPaginationOptions & { search: string; status: string }) {
+    const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc", status, search } = query;
+
+    let queryDB: any = {};
+
+    if (status) {
+      switch (status.toLowerCase()) {
+        case "accepted":
+          queryDB.bookingStatus = BOOKING_STATUS.ACCEPTED;
+          break;
+        case "cancelled":
+          queryDB.bookingStatus = BOOKING_STATUS.CANCELLED;
+          break;
+        case "rejected":
+          queryDB.bookingStatus = BOOKING_STATUS.REJECTED;
+          break;
+        case "pending":
+          queryDB.bookingStatus = BOOKING_STATUS.PENDING;
+          break;
+        case "completed":
+          queryDB.bookingStatus = BOOKING_STATUS.COMPLETED;
+          break;
+      }
+    }
+
+    if (search && search.trim() !== "") {
+
+      const providerIds = (await User.find({ name: { $regex: search, $options: "i" } }).select("_id")).map(u => u._id);
+
+      const customerIds = (await User.find({ name: { $regex: search, $options: "i" } }).select("_id")).map(u => u._id);
+
+      const serviceIds = (await Service.find({ category: { $regex: search, $options: "i" } }).select("_id")).map(s => s._id);
+
+      queryDB.$or = [
+        { provider: { $in: providerIds } },
+        { customer: { $in: customerIds } },
+        { service: { $in: serviceIds } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      Booking.find(queryDB)
+        .select("provider bookingStatus customer date service")
+        .populate("provider", "name contact address category")
+        .populate("customer", "name")
+        .populate("service", "name price category")
+        .sort({ [sortBy]: sortOrder === "asc" ? 1 : -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+
+      Booking.countDocuments(queryDB),
+    ]);
+
+    return buildPaginationResponse(data, total, page, limit);
+  }
+  
 }

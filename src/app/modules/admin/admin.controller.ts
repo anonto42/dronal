@@ -192,7 +192,7 @@ export class AdminController {
   });
 
   public getBookings = catchAsync(async (req: Request, res: Response) => {
-    const result = await this.adminService.find(req.query as any);
+    const result = await this.adminService.bookingData(req.query as any);
 
     sendResponse(res, {
       success: true,
