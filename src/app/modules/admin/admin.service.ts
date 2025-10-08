@@ -92,7 +92,7 @@ export class AdminService {
       const payment = payments.find(p => p.booking.toString() === service._id.toString());
       return {
           ...service,
-          paymentId: payment ? payment.paymentId : null,
+          paymentId: payment ? payment._id : null,
           paymentStatus: payment ? payment.paymentStatus : null,
       };
     });
