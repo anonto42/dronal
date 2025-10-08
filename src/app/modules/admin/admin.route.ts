@@ -20,7 +20,10 @@ export class AdminRoutes {
     this
       .router
       .route("/overview")
-      .get(this.adminController.overview);
+      .get(
+        auth( USER_ROLES.ADMIN ),
+        this.adminController.overview
+      );
 
     this 
       .router
