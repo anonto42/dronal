@@ -1,8 +1,8 @@
 import { NotificationRepository } from "./notification.repository";
-import { INotification } from "./notification.interface";
 import mongoose, { Types } from "mongoose";
 import { IPaginationOptions } from "../../../types/pagination";
 import { JwtPayload } from "jsonwebtoken";
+import { buildPaginationResponse } from "../../../util/pagination";
 
 export class NotificationService {
   private notificationRepo: NotificationRepository;
@@ -14,12 +14,15 @@ export class NotificationService {
   public async getMany(
     payload: JwtPayload,
     paginationOptions: IPaginationOptions
-  ): Promise<INotification[]> {
-    return this.notificationRepo.findMany({
+  ): Promise<any> {
+    const data = await this.notificationRepo.findMany({
       filter:{ for: new mongoose.Types.ObjectId( payload.id )},
       paginationOptions,
       select: "-for -updatedAt"
     });
+    const coutuntDocument = await this.notificationRepo.countDocument(payload.id);
+
+    return buildPaginationResponse(data,coutuntDocument,paginationOptions.page!, paginationOptions.limit!)
   }
 
   public async delete(ids: string[]) {
