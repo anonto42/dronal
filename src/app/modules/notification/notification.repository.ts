@@ -5,12 +5,10 @@ import { IPaginationOptions } from "../../../types/pagination";
 import { paginationHelper } from "../../../helpers/paginationHelper";
 
 export class NotificationRepository {
-
   
   async findById(id: Types.ObjectId) {
     return Notification.findById(id).lean().exec();
   }
-
 
   async findMany({
     filter,
@@ -40,11 +38,13 @@ export class NotificationRepository {
     return query.lean().exec();
   }
 
+  async countDocument( id: Types.ObjectId ) {
+    return Notification.countDocuments({ for: id })
+  }
   
   async create(payload: Partial<INotification>) {
     return Notification.create(payload);
   }
-
   
   async update(id: Types.ObjectId, payload: Partial<INotification>) {
     return Notification.findByIdAndUpdate(id, payload, {
@@ -54,14 +54,12 @@ export class NotificationRepository {
       .exec();
   }
 
-  
   async updateMany(
     filter: Partial<INotification>,
     payload: Partial<INotification>
   ): Promise<UpdateWriteOpResult> {
     return Notification.updateMany(filter, { $set: payload });
   }
-
 
   async updateManyByIds(
     ids: Types.ObjectId[],
@@ -72,7 +70,6 @@ export class NotificationRepository {
       { $set: payload }
     );
   }
-
   
   async delete(id?: Types.ObjectId, ids?: Types.ObjectId[]) {
     if (id) {
