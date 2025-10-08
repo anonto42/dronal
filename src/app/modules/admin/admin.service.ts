@@ -98,27 +98,27 @@ export class AdminService {
     });
       
     const [{ totalRevenue = 0 } = {}] = await Payment.aggregate([
-    { $match: { paymentStatus: PAYMENT_STATUS.PAYED } }, 
-    {
-      $addFields: {
-        amountNum: {
-          $cond: [
-            { $isNumber: "$amount" },
-            "$amount",
-            { $toDouble: "$amount" },
-          ],
+      { $match: { paymentStatus: PAYMENT_STATUS.PAID } }, 
+      {
+        $addFields: {
+          amountNum: {
+            $cond: [
+              { $isNumber: "$amount" },
+              "$amount",
+              { $toDouble: "$amount" },
+            ],
+          },
         },
       },
-    },
-    { $group: { _id: null, totalRevenue: { $sum: "$amountNum" } } },
-  ]);
+      { $group: { _id: null, totalRevenue: { $sum: "$amountNum" } } },
+    ]);
 
     const year = Number(yearChart) || new Date().getFullYear();
 
     const monthly = await Payment.aggregate([
       {
         $match: {
-          paymentStatus: PAYMENT_STATUS.PAYED, 
+          paymentStatus: PAYMENT_STATUS.PAID, 
           createdAt: {
             $gte: new Date(`${year}-01-01`),
             $lte: new Date(`${year}-12-31`),

@@ -518,7 +518,7 @@ export class ProviderService {
       filter: { 
         provider: new Types.ObjectId (user.id),// @ts-ignore
         $or: [
-          { paymentStatus: PAYMENT_STATUS.PAYED },
+          { paymentStatus: PAYMENT_STATUS.PAID },
           { paymentStatus: PAYMENT_STATUS.PROVIDER_CANCELLED }
         ] 
       },

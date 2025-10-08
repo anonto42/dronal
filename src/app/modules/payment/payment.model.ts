@@ -9,7 +9,7 @@ const paymentSchema = new Schema<IPayment>({
   booking: { type: Schema.Types.ObjectId, ref: "Booking" },
   amount: { type: Number, required: true },
   paymentId: { type: String },
-  paymentStatus: { type: String, required: true, enum: PAYMENT_STATUS },
+  paymentStatus: { type: String, required: true, enum: Object.values(PAYMENT_STATUS) },
 }, { timestamps: true });
 
 export const Payment = model<IPayment>("Payment", paymentSchema);

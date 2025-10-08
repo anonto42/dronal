@@ -568,7 +568,7 @@ export class ClientService {
     
     await this.userRepo.updatePayment({
       filter: { booking: new Types.ObjectId(id) },
-      payload: { paymentStatus: PAYMENT_STATUS.PAYED }
+      payload: { paymentStatus: PAYMENT_STATUS.PAID }
     });
 
     const findProvider = await this.userRepo.findById(booking[0].provider) as IUser;
@@ -637,7 +637,7 @@ export class ClientService {
       filter: { 
         customer: new Types.ObjectId (user.id),// @ts-ignore
         $or: [
-          { paymentStatus: PAYMENT_STATUS.PAYED },
+          { paymentStatus: PAYMENT_STATUS.PAID },
           { paymentStatus: PAYMENT_STATUS.PROVIDER_CANCELLED }
         ] 
       },
