@@ -245,7 +245,6 @@ export async function generateInvoiceAPI(req: Request, res: Response) {
     const data = info[0]
     if( !data ) throw new ApiError(StatusCodes.NOT_FOUND, "Payment details not found!")
     
-    // Transform your data to match the expected structure
     const paymentData: PaymentData = {
       service: {//@ts-ignore
         price: data.service.price || 0,//@ts-ignore
@@ -265,7 +264,6 @@ export async function generateInvoiceAPI(req: Request, res: Response) {
 
     const pdfMaker = new PDFInvoiceMaker();
     
-    // Option 1: Stream directly (Recommended - most efficient)
     pdfMaker.streamPDFToResponse(res, paymentData, `invoice-${paymentData.id}.pdf`);
 
   } catch (error) {
