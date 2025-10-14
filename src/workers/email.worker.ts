@@ -5,6 +5,7 @@ import { emailHelper } from "../helpers/emailHelper";
 import { io } from "socket.io-client"
 import config from "../config";
 import { messageSend } from "../helpers/fireBaseHelper";
+import { redisDB } from "../redis/connectedUsers";
 
 // DB Connection
 ;( async () => {

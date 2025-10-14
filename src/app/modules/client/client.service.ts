@@ -453,10 +453,19 @@ export class ClientService {
       });
     }
 
-    await emailQueue.add("socket-notification", notification, {
-      removeOnComplete: true,
-      removeOnFail: false,
-    });
+    // await emailQueue.add("socket-notification", notification, {
+    //   removeOnComplete: true,
+    //   removeOnFail: false,
+    // });
+
+
+    //@ts-ignore
+    const socket = global.io;
+    const userId = notification.for;
+    const socketId = await redisDB.get(`user:${userId}`);
+    
+    socket.to(socketId!).emit("notification", notification)
+    
 
     return booking;
   }
@@ -598,10 +607,16 @@ export class ClientService {
       });
     };
 
-    await emailQueue.add("socket-notification", notification, {
-      removeOnComplete: true,
-      removeOnFail: false,
-    });
+    // await emailQueue.add("socket-notification", notification, {
+    //   removeOnComplete: true,
+    //   removeOnFail: false,
+    // });
+
+    //@ts-ignore
+    const socket = global.io;
+    const userId = notification.for;
+    const socketId = await redisDB.get(`user:${userId}`);
+    socket.to(socketId!).emit("notification", notification)
 
     return ;
   }

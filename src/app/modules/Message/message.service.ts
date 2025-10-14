@@ -58,11 +58,18 @@ export class MessageService {
           });
         }
         
-        await emailQueue.add("socket-message", { message, chat },{
-          removeOnComplete: true,
-          removeOnFail: false,
-        })
-        
+        // await emailQueue.add("socket-message", { message, chat },{
+        //   removeOnComplete: true,
+        //   removeOnFail: false,
+        // })
+
+        //@ts-ignore
+        const socket = global.io;
+        chat.participants.forEach(async element => {
+            const socketId = await redisDB.get(`user:${element}`);
+            socket.to(socketId!).emit("message", message)
+        });
+
         return message;
     }
 

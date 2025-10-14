@@ -84,10 +84,17 @@ export class PaymentService {
       message: "You have a new booking request",
     });
 
-    await emailQueue.add("socket-notification", message, {
-      removeOnComplete: true,
-      removeOnFail: false,
-    });
+    // await emailQueue.add("socket-notification", message, {
+    //   removeOnComplete: true,
+    //   removeOnFail: false,
+    // });
+
+    //@ts-ignore
+    const socket = global.io;
+    const userId = message.for;
+    const socketId = await redisDB.get(`user:${userId}`);
+    socket.to(socketId!).emit("notification", message)
+    
 
     const isProviderOnline = await redisDB.get(`user:${booking.provider}`);
     if (!isProviderOnline) {

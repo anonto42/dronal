@@ -165,10 +165,18 @@ export class ProviderService {
         for: admin._id,
         message: "A new verification request has been sent"
       })
-      await emailQueue.add("socket-notification", notification, {
-        removeOnComplete: true,
-        removeOnFail: false,
-      });
+      // await emailQueue.add("socket-notification", notification, {
+      //   removeOnComplete: true,
+      //   removeOnFail: false,
+      // });
+
+
+      //@ts-ignore
+      const socket = global.io;
+      const userId = notification.for;
+      const socketId = await redisDB.get(`user:${userId}`);
+      socket.to(socketId!).emit("notification", notification)
+      
     })
 
     return data
@@ -365,11 +373,17 @@ export class ProviderService {
           });
         }
     
-        await emailQueue.add("socket-notification", notification, {
-          removeOnComplete: true,
-          removeOnFail: false,
-        })
+        // await emailQueue.add("socket-notification", notification, {
+        //   removeOnComplete: true,
+        //   removeOnFail: false,
+        // })
 
+        //@ts-ignore
+        const socket = global.io;
+        const userId = notification.for;
+        const socketId = await redisDB.get(`user:${userId}`);
+        socket.to(socketId!).emit("notification", notification)
+        
       }else if (data.action == "reject") {
         await this.providerRepo.updateBooking(new mongoose.Types.ObjectId(data.bookId), { bookingStatus: BOOKING_STATUS.REJECTED, rejectReason: data.reason });
 
@@ -393,10 +407,18 @@ export class ProviderService {
           });
         }
     
-        await emailQueue.add("socket-notification", notification, {
-          removeOnComplete: true,
-          removeOnFail: false,
-        })
+        // await emailQueue.add("socket-notification", notification, {
+        //   removeOnComplete: true,
+        //   removeOnFail: false,
+        // })
+
+
+        //@ts-ignore
+        const socket = global.io;
+        const userId = notification.for;
+        const socketId = await redisDB.get(`user:${userId}`);
+        socket.to(socketId!).emit("notification", notification)
+        
       }
   
   }
@@ -503,10 +525,16 @@ export class ProviderService {
       });
     }
 
-    await emailQueue.add("socket-notification", notification, {
-      removeOnComplete: true,
-      removeOnFail: false,
-    })
+    // await emailQueue.add("socket-notification", notification, {
+    //   removeOnComplete: true,
+    //   removeOnFail: false,
+    // })
+
+    //@ts-ignore
+    const socket = global.io;
+    const userId = notification.for;
+    const socketId = await redisDB.get(`user:${userId}`);
+    socket.to(socketId!).emit("notification", notification)
 
     return provider.wallet;
   }
