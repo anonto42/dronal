@@ -20,7 +20,7 @@ import { Notification } from '../notification/notification.model';
 import { emailQueue } from '../../../queues/email.queue';
 import { redisDB } from '../../../redis/connectedUsers';
 import { PAYMENT_STATUS } from '../../../enums/payment';
-import { PDFInvoiceMaker } from '../../../helpers/pdfMaker';
+import { calculateDistanceInKm } from '../../../helpers/calculateDistance';
 
 export class ClientService {
   private userRepo: ClientRepository;
@@ -96,80 +96,6 @@ export class ClientService {
       if (subCategory) query.subCategory = subCategory;
       if (price) query.price = { $lte: Number(price) };
   
-      // Handle distance and rating filters
-      let providerIds: any[] = [];
-      
-      if (distance || rating) {
-        const userDoc = await this.userRepo.findById(new Types.ObjectId(user.id));
-        if (!userDoc) {
-          throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
-        }
-  
-        // Build provider query for distance and rating
-        const providerQuery: any = {};
-  
-        // Handle distance filter
-        if (distance && userDoc.location?.coordinates) {
-          providerQuery.location = {
-            $near: {
-              $geometry: {
-                type: "Point",
-                coordinates: userDoc.location.coordinates,
-              },
-              $maxDistance: Number(distance) * 1000,
-            },
-          };
-        }
-  
-        // Handle rating filter
-        if (rating) {
-          // Get providers with average rating >= specified rating
-          const ratedProviders = await Review.aggregate([
-            {
-              $group: {
-                _id: "$provider",
-                averageRating: { $avg: "$rating" }
-              }
-            },
-            {
-              $match: {
-                averageRating: { $gte: Number(rating) }
-              }
-            }
-          ]);
-  
-          const ratedProviderIds = ratedProviders.map(rp => rp._id);
-          
-          if (providerQuery._id) {
-            providerQuery._id.$in = providerQuery._id.$in.filter((id: any) => 
-              ratedProviderIds.includes(id.toString())
-            );
-          } else {
-            providerQuery._id = { $in: ratedProviderIds };
-          }
-        }
-  
-        // Find providers that match the criteria
-        const matchingProviders = await User.find(providerQuery).select('_id');
-        providerIds = matchingProviders.map(provider => provider._id);
-  
-        // Add provider filter to service query
-        if (providerIds.length > 0) {
-          query.creator = { $in: providerIds };
-        } else {
-          // If no providers match, return empty result
-          return {
-            data: [],
-            pagination: {
-              page: Number(page),
-              limit: Number(limit),
-              total: 0,
-              totalPages: 0
-            }
-          };
-        }
-      }
-  
       // Get user's favorite providers once
       const favoriteProviders = await CustomerFavorite.find({ 
         customer: new Types.ObjectId(user.id) 
@@ -180,7 +106,7 @@ export class ClientService {
       // Execute main query
       const [services, total] = await Promise.all([
         Service.find(query)
-          .populate('creator', 'name image contact address location category experience')
+          .populate('creator', '_id name image contact address location category experience')
           .sort(sortOption)
           .limit(Number(limit))
           .skip(skip)
@@ -189,7 +115,7 @@ export class ClientService {
         Service.countDocuments(query)
       ]);
   
-      // Add review counts and favorite status
+      // Add review counts and favorite status and cordinates
       const servicesWithStats = await Promise.all(
         services.map(async (service) => {
           const reviewCount = await Review.countDocuments({ 
@@ -200,12 +126,15 @@ export class ClientService {
             { $match: { provider: service.creator?._id } },
             { $group: { _id: null, averageRating: { $avg: "$rating" } } }
           ]);
+
+          const coordinates = await User.findById( service.creator._id ).lean().exec();
   
           const isFavorite = favoriteProviderIds.includes(service.creator?._id.toString());
   
           return {
             ...service,
             providerStats: {
+              coordinates: coordinates,
               reviewCount,
               averageRating: averageRating.length > 0 ? 
                 Math.round(averageRating[0].averageRating * 10) / 10 : 0,
@@ -226,12 +155,23 @@ export class ClientService {
           provider: {//@ts-ignore
             image: service.creator?.image,//@ts-ignore
             name: service.creator?.name,
+            _id: service.creator._id,
             reviewCount: service.providerStats.reviewCount,
+            coordinates: service?.providerStats?.coordinates?.location.coordinates,
             averageRating: service.providerStats.averageRating,
             isFavorite: service.providerStats.isFavorite
           }
         };
       });
+
+      if (distance && rating) {
+        const currentUser = await User.findById(user.id).select("location").lean().exec().then( e => e?.location.coordinates ).catch( e => console.error(e) ) as any;
+        const allCountedDistance = formetedData.map( e => ({
+          ...e,//@ts-ignore
+          distance: Math.round(calculateDistanceInKm(currentUser[1]!,currentUser[0]!, e.provider.coordinates[1], e.provider.coordinates[0]))
+        }));
+        return allCountedDistance.filter( e => e.provider.averageRating >= rating ).filter( e => e.distance <= distance );
+      }
   
       return formetedData;
   
