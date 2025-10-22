@@ -147,6 +147,7 @@ export class ClientService {
       const formetedData = servicesWithStats.map(service => {
         return {
           service:{
+            _id: service._id,
             image: service.image,
             category: service.category,
             price: service.price,
@@ -190,7 +191,7 @@ export class ClientService {
 
     const services = await this.userRepo.findMany({ 
       filter: { creator: id, isDeleted: false },
-      select: "creator category image price",
+      select: "creator category image price expertise",
       paginationOptions: {
         limit: query.servicesLimit,
         page: query.servicesPage,
@@ -225,7 +226,6 @@ export class ClientService {
     const isFavorite = await this.userRepo.getFavorites({ customer: user.id!, provider: provider._id },"provider");
 
     return {
-      isFavorite: isFavorite?.length > 0,
       services,
       reviews:{
         overview: {
@@ -242,12 +242,14 @@ export class ClientService {
         all: reviews,
       },
       provider:{
+        _id: provider._id,
         name: provider.name,
         image: provider.image,
         category: provider.category,
         experience: provider.experience,
         complitedTask: completedTask?.length ?? 0,
         rating: averageRating,
+        isFavorite: isFavorite?.length > 0,
       },
       overView:{
         overView: provider.overView,
