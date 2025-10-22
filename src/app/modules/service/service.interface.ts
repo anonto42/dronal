@@ -7,5 +7,6 @@ export interface IService {
     category: string,
     subCategory: string,
     price: number,
+    expertise: string,
     isDeleted: boolean
 }

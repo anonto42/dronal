@@ -22,6 +22,10 @@ const serviceSchema = new Schema<IService>({
         type: Number,
         required: true
     },
+    expertise:{
+        type: String,
+        default: ""
+    },
     isDeleted:{
         type: Boolean,
         default: false
