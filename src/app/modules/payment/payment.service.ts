@@ -83,12 +83,7 @@ export class PaymentService {
       for: providerId,
       message: "You have a new booking request",
     });
-
-    // await emailQueue.add("socket-notification", message, {
-    //   removeOnComplete: true,
-    //   removeOnFail: false,
-    // });
-
+    
     //@ts-ignore
     const socket = global.io;
     const userId = message.for;
