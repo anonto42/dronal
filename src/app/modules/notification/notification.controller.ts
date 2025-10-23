@@ -19,6 +19,7 @@ export class NotificationController {
       page: Number(req.query.page) || 1,
       limit: Number(req.query.limit) || 10,
       sortBy: "createdAt",
+      status: req.query.status as any,
       sortOrder: req.query.sortOrder as "asc" | "desc" || "desc",
     };
 
@@ -44,7 +45,7 @@ export class NotificationController {
 
   public markAllAsRead = catchAsync(async (req: Request, res: Response) => {
 
-    await this.notificationService.markAllAsRead( req.body.ids as string[] );
+    await this.notificationService.markAllAsRead( req.body.ids as string[], req.user );
 
     sendResponse(res, {
       success: true,
