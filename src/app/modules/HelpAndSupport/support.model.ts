@@ -13,7 +13,7 @@ const supportSchema = new Schema<ISupport>({
     },
     attachment: {
         type: String,
-        required: true
+        default: ""
     },
     user: {
         type: Schema.Types.ObjectId,
