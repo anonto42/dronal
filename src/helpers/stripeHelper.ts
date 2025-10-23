@@ -14,7 +14,7 @@ interface metadata {
 export const createCheckoutSession = async (req: Request, amount: number, metadata: metadata, productName: string) => {
   const session = await checkout.sessions.create({
     payment_method_types: ["card"],
-    line_items: [{ price_data: { currency: "usd", product_data: { name: productName }, unit_amount: amount * 100 }, quantity: 1 }],
+    line_items: [{ price_data: { currency: "ZAR", product_data: { name: productName }, unit_amount: amount * 100 }, quantity: 1 }],
     mode: "payment",
     success_url: `${req.protocol}://${req.headers.host}/api/v1/payment/success?sessionId={CHECKOUT_SESSION_ID}`,
     cancel_url: `${req.protocol}://${req.headers.host}/api/v1/payment/failure`,
