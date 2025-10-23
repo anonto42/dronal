@@ -6,7 +6,7 @@ const usersAdminSchema = z.object({
     limit: z.string().optional().default("10"),
     sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
     sortBy: z.string().optional().default("createdAt"),
-    role: z.enum(["user", "provider", "all"]).optional().default("all"),
+    role: z.enum(["client", "provider", "all"]).optional().default("all"),
     search: z.string().optional()
   }).strict()
 });

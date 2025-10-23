@@ -21,7 +21,6 @@ import { Category } from "../category/category.model";
 import { TermsModel } from "../terms&policy/terms&policy.model";
 import { Review } from "../review/review.model";
 import { Notification } from "../notification/notification.model";
-
 import { emailQueue } from "../../../queues/email.queue";
 import { redisDB } from "../../../redis/connectedUsers";
 import { Service } from "../service/service.model";
@@ -160,7 +159,7 @@ export class AdminService {
   }
 
   public async getUsers(
-    query: IPaginationOptions & { role?: "user" | "provider"; search?: string }
+    query: IPaginationOptions & { role?: "client" | "provider"; search?: string }
   ) {
 
     const {
@@ -179,7 +178,7 @@ export class AdminService {
       status: { $ne: STATUS.DELETED },
     };
     
-    if (role === "user") filter.role = USER_ROLES.CLIENT;
+    if (role === "client") filter.role = USER_ROLES.CLIENT;
     if (role === "provider") filter.role = USER_ROLES.PROVIDER;
 
     if (search && search.trim() !== "") {
