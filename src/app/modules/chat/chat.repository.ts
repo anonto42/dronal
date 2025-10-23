@@ -2,6 +2,7 @@ import { Chat } from "./chat.model";
 import { IChat } from "./chat.interface";
 import { Types } from "mongoose";
 import { Message } from "../Message/message.model";
+import { IPaginationOptions } from "../../../types/pagination";
 
 export class ChatRepository {
   
@@ -27,19 +28,28 @@ export class ChatRepository {
     return chat;
   }
 
-  async findAll(id: Types.ObjectId) {
-    return Chat
+  async findAll(id: Types.ObjectId, paginate: IPaginationOptions) {
+  const page = paginate.page ?? 1;
+  const limit = paginate.limit ?? 10;
+
+  const sortBy = paginate.sortBy ?? 'createdAt'; 
+  const sortOrder = paginate.sortOrder === 'desc' ? -1 : 1; 
+
+  return Chat
     .find({ participants: id })
-    .populate("participants","name image")
+    .populate("participants", "name image")  
     .populate({
-      path: "lastMessage", 
-      select: "sender message isSeen createdAt",
+      path: "lastMessage",
+      select: "sender message isSeen createdAt", 
       populate: {
         path: "sender",
         select: "name image"
       }
     })
-    .select("-createdAt -updatedAt -__v")
+    .limit(limit) 
+    .skip((page - 1) * limit)
+    .sort({ [sortBy]: sortOrder }) 
+    .select("-createdAt -updatedAt -__v")  
     .lean()
     .exec();
   }

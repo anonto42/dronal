@@ -4,6 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
 import { JwtPayload } from "jsonwebtoken";
 import { User } from "../user/user.model";
+import { IPaginationOptions } from "../../../types/pagination";
 
 export class ChatService {
   private chatRepo: ChatRepository;
@@ -26,11 +27,12 @@ export class ChatService {
     };
   }
 
-  public async allChats (payload: JwtPayload){
+  public async allChats (payload: JwtPayload, query: Partial<IPaginationOptions>){
 
-    const allChats = await this.chatRepo.findAll( new Types.ObjectId(payload.id))
+    const allChats = await this.chatRepo.findAll( new Types.ObjectId(payload.id), query);
 
-    return allChats
+    return allChats.map( c => ({...c, participants: c.participants.filter( u => u._id != payload.id )}));
+
   }
 
   public async deleteOneChat (payload: JwtPayload, id: string){

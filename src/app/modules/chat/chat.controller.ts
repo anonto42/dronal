@@ -35,7 +35,7 @@ export class ChatController {
 
   public getAllChats = catchAsync(async (req: Request, res: Response) => {
     
-    const result = await this.chatService.allChats(req.user);
+    const result = await this.chatService.allChats(req.user, req.query);
 
     sendResponse(res, {
       success: true,
