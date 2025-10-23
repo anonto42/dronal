@@ -14,6 +14,8 @@ import { Booking } from "../booking/booking.model";
 import { Category } from "../category/category.model";
 import { IPayment } from "../payment/payment.interface";
 import { Payment } from "../payment/payment.model";
+import { BOOKING_STATUS } from "../../../enums/booking";
+import { PAYMENT_STATUS } from "../../../enums/payment";
 
 export class ProviderRepository {
 
@@ -192,6 +194,24 @@ export class ProviderRepository {
 
   async createPayment(data: Partial<IPayment>){
     return Payment.create(data)
+  }
+
+  async homeData(userId: Types.ObjectId){
+
+    const newRequests = await Booking.countDocuments({bookingStatus: BOOKING_STATUS.PENDING}).lean().exec();
+    const upCommingOrder = await Booking.countDocuments({bookingStatus: BOOKING_STATUS.ACCEPTED}).lean().exec();
+    const completedOrder = await Booking.countDocuments({bookingStatus: BOOKING_STATUS.COMPLETED}).lean().exec();
+    const totalEarning = await Payment.find({
+      provider: userId,
+      paymentStatus: PAYMENT_STATUS.COMPLETED
+    }).lean().exec().then( e => e.reduce((total,payment) => total + payment.amount, 0));
+
+    return {
+      totalEarning,
+      completedOrder,
+      upCommingOrder,
+      newRequests
+    }
   }
 
 }

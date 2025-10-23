@@ -34,6 +34,13 @@ export class ProviderRoutes {
         auth( USER_ROLES.PROVIDER ),
         this.providerController.providerProfileDelete
       );
+    
+    this.router
+      .route("/home")
+      .get(
+        auth( USER_ROLES.PROVIDER ),
+        this.providerController.providerHome
+      )
 
     this.router
       .route("/verification")

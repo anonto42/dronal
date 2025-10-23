@@ -45,6 +45,12 @@ export class ProviderService {
     return provider
   }
 
+  public async providerHome(
+    payload: JwtPayload
+  ) {
+    return await this.providerRepo.homeData(new mongoose.Types.ObjectId( payload.id ));
+  }
+
   public async profileUpdate(
     payload: JwtPayload,
     data: Partial<IUser>

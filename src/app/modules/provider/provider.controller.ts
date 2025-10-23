@@ -24,6 +24,18 @@ export class ProviderController {
     });
   });
 
+  public providerHome = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await this.providerService.providerHome(req.user);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Provider home retrieved successfully",
+      data: result,
+    });
+  });
+
   public providerProfileUpdate = catchAsync(async (req: Request, res: Response) => {
 
     const image = getSingleFilePath(req.files,"image");
