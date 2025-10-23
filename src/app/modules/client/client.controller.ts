@@ -41,7 +41,7 @@ export class ClientController {
   });
 
   public deleteProfile = catchAsync(async (req: Request | any, res: Response) => {
-    const result = await this.clientService.deleteProfile(req.user);
+    const result = await this.clientService.deleteProfile(req.user, req.body.password);
 
     sendResponse(res, {
       success: true,

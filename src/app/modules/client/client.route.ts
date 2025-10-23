@@ -33,7 +33,7 @@ export class ClientRoutes {
       this.clientController.updateProfile
     )
     .delete(
-      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT),
+      auth(USER_ROLES.ADMIN, USER_ROLES.CLIENT, USER_ROLES.PROVIDER),
       this.clientController.deleteProfile
     );
 

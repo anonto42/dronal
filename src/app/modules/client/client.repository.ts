@@ -17,11 +17,22 @@ import { BOOKING_STATUS } from '../../../enums/booking';
 import { Category } from '../category/category.model';
 import { IPayment } from './../payment/payment.interface';
 import { Payment } from '../payment/payment.model';
+import { STATUS } from '../../../enums/user';
 
 export class ClientRepository {
 
-  async findById(id: Types.ObjectId,select?: string) {
-    return User.findById(id).select(select?? "").lean().exec();
+  async findById(
+    id: Types.ObjectId,
+    select?: string
+  ) {
+    
+    let query = User.findById(id)
+    
+    if (select) {
+      query = query.select(select)
+    }
+
+    return query.lean().exec(); 
   }
 
   async findByEmail(email: string) {
@@ -34,6 +45,10 @@ export class ClientRepository {
 
   async update(id: Types.ObjectId, payload: Partial<IUser>) {
     return User.findByIdAndUpdate(id, payload, { new: true }).lean().exec();
+  }
+
+  async delete(id: Types.ObjectId){
+    return User.findByIdAndUpdate(id, { status: STATUS.DELETED }).lean().exec();
   }
 
   async isExistById(id: Types.ObjectId) {

@@ -21,6 +21,7 @@ import { emailQueue } from '../../../queues/email.queue';
 import { redisDB } from '../../../redis/connectedUsers';
 import { PAYMENT_STATUS } from '../../../enums/payment';
 import { calculateDistanceInKm } from '../../../helpers/calculateDistance';
+import bcrypt from "bcrypt";
 
 export class ClientService {
   private userRepo: ClientRepository;
@@ -46,19 +47,19 @@ export class ClientService {
     return payload
   }
 
-  public async deleteProfile(user: JwtPayload) {
-    const existingUser = await this.userRepo.findById(new Types.ObjectId(user.id!));
+  public async deleteProfile(user: JwtPayload, password: string) {
+    const existingUser = await this.userRepo.findById(new Types.ObjectId(user.id!),"+password");
     if (!existingUser) throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
 
-    // const isMatch = data.password && await bcrypt.compare(data.password, existingUser.password);
-    // if (!isMatch) {
-    //   throw new ApiError(
-    //     StatusCodes.NOT_FOUND,
-    //     "Password not match!"
-    //   )
-    // };
+    const isMatch = password && await bcrypt.compare(password, existingUser.password);
+    if (!isMatch) {
+      throw new ApiError(
+        StatusCodes.NOT_FOUND,
+        "Password not match!"
+      )
+    };
 
-    await this.userRepo.update(existingUser._id, { status: STATUS.DELETED });
+    await this.userRepo.delete(existingUser._id);
 
   }
 
