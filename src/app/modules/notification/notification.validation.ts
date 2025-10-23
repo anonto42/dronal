@@ -10,6 +10,7 @@ const getNotificationSchema = z.object({
   query: z.object({
     page: z.coerce.number().optional(),
     limit: z.coerce.number().optional(),
+    status: z.enum(["read","unRead"],{ invalid_type_error: "You must select the type read or unRead"}).optional(),
     sortOrder: z.enum([ "desc", "asc"]).optional()
   }).strict()
 });
