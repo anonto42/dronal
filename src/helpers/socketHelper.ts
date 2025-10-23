@@ -13,6 +13,7 @@ const socket = (io: Server) => {
     // Set user id in redis
     socket.on("set-online", async (userId) => {
       await redisDB.set(`user:${userId}`, socket.id);
+      console.log("User connecntd with socket ", socket.id)
     })
 
     // Send notification 
